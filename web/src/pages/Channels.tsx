@@ -109,7 +109,7 @@ export default function Channels() {
   };
 
   return (
-    <div className="container mx-auto py-6 sm:py-8 px-4 max-w-7xl">
+    <div className="mx-auto py-6 sm:py-8 px-4 max-w-7xl">
       <div className="space-y-8">
         {/* Header */}
         <div className="space-y-2">

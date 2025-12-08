@@ -78,7 +78,7 @@ export default function Queue() {
 
   if (isLoading && !queueData) {
     return (
-      <div className="container mx-auto py-8 max-w-6xl">
+      <div className="mx-auto py-8 max-w-6xl">
         <div className="flex items-center justify-center py-12">
           <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
           <span className="ml-2 text-muted-foreground">Loading queue...</span>
@@ -97,7 +97,7 @@ export default function Queue() {
     : [];
 
   return (
-    <div className="container mx-auto py-6 sm:py-8 px-4 max-w-6xl">
+    <div className="mx-auto py-6 sm:py-8 px-4 max-w-6xl">
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

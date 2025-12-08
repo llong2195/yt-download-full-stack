@@ -12,16 +12,16 @@ import History from "./pages/History";
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen w-full flex flex-col bg-linear-to-br from-background to-secondary/20">
+      <div className="min-h-screen w-full flex flex-col bg-gradient-to-br from-background to-secondary/20">
         {/* Navigation */}
-        <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
               <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <div className="rounded-lg bg-primary p-2">
                   <Youtube className="h-5 w-5 text-primary-foreground" />
                 </div>
-                <span className="text-xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                   YT Downloader
                 </span>
               </Link>
@@ -56,7 +56,7 @@ function App() {
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 container">
+        <main className="flex-1 w-full">
           <Routes>
             <Route path="/" element={<Channels />} />
             <Route path="/downloads" element={<Downloads />} />
@@ -67,7 +67,7 @@ function App() {
 
         {/* Footer */}
         <footer className="border-t py-6 bg-background/50">
-          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <div className="mx-auto px-4 text-center text-sm text-muted-foreground">
             <p>YouTube Downloader © 2025 - Download and manage your favorite videos</p>
           </div>
         </footer>

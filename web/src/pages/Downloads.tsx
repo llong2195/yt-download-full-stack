@@ -42,7 +42,7 @@ export default function Downloads() {
   };
 
   return (
-    <div className="container mx-auto py-6 sm:py-8 px-4 max-w-5xl">
+    <div className="mx-auto py-6 sm:py-8 px-4 max-w-5xl">
       <div className="mb-8 space-y-3">
         <h1 className="text-3xl sm:text-4xl font-bold flex items-center gap-3 bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
           <div className="rounded-lg bg-primary p-2">

@@ -127,7 +127,7 @@ export default function History() {
   const hasMore = offset + limit < total;
 
   return (
-    <div className="container mx-auto py-6 sm:py-8 px-4 max-w-6xl">
+    <div className="mx-auto py-6 sm:py-8 px-4 max-w-6xl">
       {/* Header */}
       <div className="mb-8 space-y-2">
         <h1 className="text-3xl sm:text-4xl font-bold flex items-center gap-3 bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
