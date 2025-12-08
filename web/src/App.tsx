@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route, Link } from "react-router";
 import { Youtube } from "lucide-react";
 import Channels from "./pages/Channels";
 import Downloads from "./pages/Downloads";
+import Queue from "./pages/Queue";
+import History from "./pages/History";
 
 function App() {
   return (
@@ -36,9 +38,22 @@ function App() {
                     Downloads
                   </Link>
                 </li>
-                {/* TODO: Add Queue and History links */}
-                {/* <li><Link to="/queue">Queue</Link></li> */}
-                {/* <li><Link to="/history">History</Link></li> */}
+                <li>
+                  <Link
+                    to="/queue"
+                    className="text-sm font-medium transition-colors hover:text-primary"
+                  >
+                    Queue
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/history"
+                    className="text-sm font-medium transition-colors hover:text-primary"
+                  >
+                    History
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>
@@ -49,9 +64,8 @@ function App() {
           <Routes>
             <Route path="/" element={<Channels />} />
             <Route path="/downloads" element={<Downloads />} />
-            {/* TODO: Add Queue and History routes */}
-            {/* <Route path="/queue" element={<Queue />} /> */}
-            {/* <Route path="/history" element={<History />} /> */}
+            <Route path="/queue" element={<Queue />} />
+            <Route path="/history" element={<History />} />
           </Routes>
         </main>
       </div>

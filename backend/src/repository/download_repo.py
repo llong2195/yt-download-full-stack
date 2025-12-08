@@ -221,3 +221,135 @@ def get_all_history(
         .limit(limit)
         .all()
     )
+
+
+def get_history_with_filters(
+    db: Session,
+    search: Optional[str] = None,
+    date_from: Optional[datetime] = None,
+    date_to: Optional[datetime] = None,
+    success: Optional[bool] = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> tuple[List[DownloadHistory], int]:
+    """Get download history with search and filters.
+
+    Args:
+        db: Database session
+        search: Search in video_title (case-insensitive)
+        date_from: Filter by download_date >= date_from
+        date_to: Filter by download_date <= date_to
+        success: Filter by success status
+        limit: Maximum number of records to return
+        offset: Number of records to skip
+
+    Returns:
+        Tuple of (history records, total count)
+    """
+    from src.models.channel import Channel
+
+    # Build query with JOIN to Channel to get channel name
+    query = db.query(DownloadHistory).join(
+        Channel, DownloadHistory.channel_id == Channel.id
+    )
+
+    # Apply filters
+    if search:
+        query = query.filter(
+            DownloadHistory.video_title.ilike(f"%{search}%")
+        )
+    
+    if date_from:
+        query = query.filter(DownloadHistory.download_date >= date_from)
+    
+    if date_to:
+        query = query.filter(DownloadHistory.download_date <= date_to)
+    
+    if success is not None:
+        query = query.filter(DownloadHistory.success == success)
+
+    # Get total count before pagination
+    total_count = query.count()
+
+    # Apply pagination and ordering
+    results = (
+        query.order_by(DownloadHistory.download_date.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    return results, total_count
+
+
+def get_history_stats(db: Session, period: str = "all") -> dict:
+    """Get download history statistics.
+
+    Args:
+        db: Database session
+        period: Time period for stats (7d, 30d, 90d, all)
+
+    Returns:
+        Dictionary with stats: total, success_rate, total_size, avg_time, most_downloaded_channel
+    """
+    from src.models.channel import Channel
+    from sqlalchemy import func
+
+    # Calculate date filter based on period
+    date_filter = None
+    if period == "7d":
+        date_filter = datetime.now() - datetime.timedelta(days=7)
+    elif period == "30d":
+        date_filter = datetime.now() - datetime.timedelta(days=30)
+    elif period == "90d":
+        date_filter = datetime.now() - datetime.timedelta(days=90)
+
+    # Base query
+    query = db.query(DownloadHistory)
+    if date_filter:
+        query = query.filter(DownloadHistory.download_date >= date_filter)
+
+    # Get all stats
+    total = query.count()
+    successful = query.filter(DownloadHistory.success == True).count()
+    success_rate = (successful / total * 100) if total > 0 else 0.0
+
+    # Total size (sum of file_size where not null)
+    total_size = (
+        query.filter(DownloadHistory.file_size.isnot(None))
+        .with_entities(func.sum(DownloadHistory.file_size))
+        .scalar()
+        or 0
+    )
+
+    # Average download time
+    avg_time = (
+        query.filter(DownloadHistory.download_duration_seconds.isnot(None))
+        .with_entities(func.avg(DownloadHistory.download_duration_seconds))
+        .scalar()
+        or 0.0
+    )
+
+    # Most downloaded channel
+    most_downloaded = (
+        query.join(Channel, DownloadHistory.channel_id == Channel.id)
+        .filter(DownloadHistory.success == True)
+        .with_entities(
+            Channel.name,
+            func.count(DownloadHistory.id).label("download_count"),
+        )
+        .group_by(Channel.name)
+        .order_by(func.count(DownloadHistory.id).desc())
+        .first()
+    )
+
+    most_downloaded_channel = most_downloaded[0] if most_downloaded else None
+
+    return {
+        "total": total,
+        "successful": successful,
+        "success_rate": round(success_rate, 2),
+        "total_size": total_size,
+        "avg_download_time": round(float(avg_time), 2),
+        "most_downloaded_channel": most_downloaded_channel,
+    }

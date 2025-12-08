@@ -1,19 +1,20 @@
 """Downloads API router."""
 
 from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
 from src.models.database import get_db
 from src.models.schemas import (
     BatchDownloadResponse,
     BatchUrlDownloadRequest,
     DownloadRequest,
     DownloadTaskResponse,
-    ErrorResponse,
 )
 from src.services import download_service
+from src.utils.logger import get_logger
 
+logger = get_logger(__name__)
 router = APIRouter()
 
 
@@ -71,12 +72,14 @@ async def request_batch_download_by_urls(
         )
 
     except download_service.DownloadServiceError as e:
+        logger.exception(f"Download service error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
 
     except Exception as e:
+        logger.exception(f"Failed to process batch download: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process batch download: {str(e)}",
@@ -106,24 +109,28 @@ async def request_single_download(
         return DownloadTaskResponse.model_validate(task)
 
     except download_service.DuplicateDownloadError as e:
+        logger.exception(f"Duplicate download error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(e),
         )
 
     except download_service.ActiveDownloadError as e:
+        logger.exception(f"Active download error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(e),
         )
 
     except download_service.DownloadServiceError as e:
+        logger.exception(f"Download service error: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
         )
 
     except Exception as e:
+        logger.exception(f"Failed to request download: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to request download: {str(e)}",

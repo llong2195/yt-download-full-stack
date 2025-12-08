@@ -11,7 +11,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.models import Base, engine
-from src.routers import channels, downloads, queue
+from src.routers import channels, downloads, queue, history
 from src.tasks.huey_instance import huey
 from src.utils.config import settings
 from src.utils.logger import get_logger
@@ -76,6 +76,4 @@ async def health_check():
 app.include_router(channels.router, prefix="/api/channels", tags=["channels"])
 app.include_router(downloads.router, prefix="/api/downloads", tags=["downloads"])
 app.include_router(queue.router, prefix="/api/queue", tags=["queue"])
-
-# TODO: Register remaining routers
-# app.include_router(history.router, prefix="/api/history", tags=["history"])
+app.include_router(history.router, prefix="/api/history", tags=["history"])

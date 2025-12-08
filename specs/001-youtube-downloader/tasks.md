@@ -155,16 +155,16 @@
 
 ### Frontend for User Story 3
 
-- [ ] T075 [P] [US3] Create web/src/services/queueApi.ts with functions: fetchQueueStatus(), fetchTaskStatus(task_id), retryTask(task_id)
-- [ ] T076 [P] [US3] Create web/src/components/QueueItem.tsx to display task info (video title, status badge, progress bar, error message, retry button if failed)
-- [ ] T077 [US3] Create web/src/pages/Queue.tsx with queue summary stats (pending, downloading, completed_today, failed_today) and task list
-- [ ] T078 [US3] Add Queue route in web/src/App.tsx using <Route path="/queue" element={<Queue />} />
-- [ ] T079 [US3] Implement polling in web/src/pages/Queue.tsx: useEffect with setInterval every 2500ms to fetch queue status
-- [ ] T080 [US3] Show progress bar in web/src/components/QueueItem.tsx for tasks with status=downloading (0-100%)
-- [ ] T081 [US3] Add retry button in web/src/components/QueueItem.tsx for failed tasks (calls retryTask API)
-- [ ] T082 [US3] Show "last updated" timestamp in web/src/pages/Queue.tsx to indicate freshness of data
-- [ ] T083 [US3] Add color-coded status badges in web/src/components/QueueItem.tsx: pending=yellow, downloading=blue, completed=green, failed=red
-- [ ] T084 [US3] Stop polling when user leaves Queue page (cleanup in useEffect return function)
+- [X] T075 [P] [US3] Create web/src/services/queueApi.ts with functions: fetchQueueStatus(), fetchTaskStatus(task_id), retryTask(task_id)
+- [X] T076 [P] [US3] Create web/src/components/QueueItem.tsx to display task info (video title, status badge, progress bar, error message, retry button if failed)
+- [X] T077 [US3] Create web/src/pages/Queue.tsx with queue summary stats (pending, downloading, completed_today, failed_today) and task list
+- [X] T078 [US3] Add Queue route in web/src/App.tsx using <Route path="/queue" element={<Queue />} />
+- [X] T079 [US3] Implement polling in web/src/pages/Queue.tsx: useEffect with setInterval every 2500ms to fetch queue status
+- [X] T080 [US3] Show progress bar in web/src/components/QueueItem.tsx for tasks with status=downloading (0-100%)
+- [X] T081 [US3] Add retry button in web/src/components/QueueItem.tsx for failed tasks (calls retryTask API)
+- [X] T082 [US3] Show "last updated" timestamp in web/src/pages/Queue.tsx to indicate freshness of data
+- [X] T083 [US3] Add color-coded status badges in web/src/components/QueueItem.tsx: pending=yellow, downloading=blue, completed=green, failed=red
+- [X] T084 [US3] Stop polling when user leaves Queue page (cleanup in useEffect return function)
 
 **Checkpoint**: User Story 3 complete - queue visibility, real-time updates via polling, retry capability
 
@@ -178,27 +178,27 @@
 
 ### Backend for User Story 4
 
-- [ ] T085 [P] [US4] Update backend/repository/history_repo.py with get_history(search, date_from, date_to, success, limit, offset) function with JOIN to Channel (video info already in DownloadHistory)
-- [ ] T086 [P] [US4] Add get_history_stats(period) function to backend/repository/history_repo.py for analytics (total, success rate, total size, avg time, most downloaded channel)
-- [ ] T087 [US4] Create backend/routers/history.py with GET /api/history endpoint supporting query params: search, date_from, date_to, success, limit, offset
-- [ ] T088 [US4] Add GET /api/history/stats endpoint to backend/routers/history.py with period query param (7d, 30d, 90d, all)
-- [ ] T089 [US4] Register history router in backend/main.py with prefix /api/history
-- [ ] T090 [US4] Add pagination metadata to GET /api/history response: total, limit, offset, filters_applied
+- [X] T085 [P] [US4] Update backend/repository/history_repo.py with get_history(search, date_from, date_to, success, limit, offset) function with JOIN to Channel (video info already in DownloadHistory)
+- [X] T086 [P] [US4] Add get_history_stats(period) function to backend/repository/history_repo.py for analytics (total, success rate, total size, avg time, most downloaded channel)
+- [X] T087 [US4] Create backend/routers/history.py with GET /api/history endpoint supporting query params: search, date_from, date_to, success, limit, offset
+- [X] T088 [US4] Add GET /api/history/stats endpoint to backend/routers/history.py with period query param (7d, 30d, 90d, all)
+- [X] T089 [US4] Register history router in backend/main.py with prefix /api/history
+- [X] T090 [US4] Add pagination metadata to GET /api/history response: total, limit, offset, filters_applied
 
 ### Frontend for User Story 4
 
-- [ ] T091 [P] [US4] Create web/src/types/history.ts with DownloadHistory interface
-- [ ] T092 [P] [US4] Create web/src/services/historyApi.ts with functions: fetchHistory(filters), fetchHistoryStats(period)
-- [ ] T093 [P] [US4] Create web/src/components/HistoryItem.tsx to display history record (video title, channel, date, file size, duration, success badge)
-- [ ] T094 [US4] Create web/src/pages/History.tsx with search input, date range filters, success filter checkbox, and history list
-- [ ] T095 [US4] Add History route in web/src/App.tsx using <Route path="/history" element={<History />} />
-- [ ] T096 [US4] Implement search functionality in web/src/pages/History.tsx: debounced input calling fetchHistory with search param
-- [ ] T097 [US4] Add date range pickers in web/src/pages/History.tsx (date_from, date_to inputs) that trigger fetchHistory
-- [ ] T098 [US4] Implement pagination in web/src/pages/History.tsx with "Load More" button or infinite scroll
-- [ ] T099 [US4] Show history stats summary at top of web/src/pages/History.tsx: total downloads, success rate, total size
-- [ ] T100 [US4] Add filtering by success/failure in web/src/pages/History.tsx with checkbox or toggle
-- [ ] T101 [P] [US4] Create web/src/utils/formatters.ts with functions: formatFileSize(bytes), formatDuration(seconds), formatDate(iso_string)
-- [ ] T102 [US4] Use formatters in web/src/components/HistoryItem.tsx to display human-readable file sizes and dates
+- [X] T091 [P] [US4] Create web/src/types/history.ts with DownloadHistory interface
+- [X] T092 [P] [US4] Create web/src/services/historyApi.ts with functions: fetchHistory(filters), fetchHistoryStats(period)
+- [X] T093 [P] [US4] Create web/src/components/HistoryItem.tsx to display history record (video title, channel, date, file size, duration, success badge)
+- [X] T094 [US4] Create web/src/pages/History.tsx with search input, date range filters, success filter checkbox, and history list
+- [X] T095 [US4] Add History route in web/src/App.tsx using <Route path="/history" element={<History />} />
+- [X] T096 [US4] Implement search functionality in web/src/pages/History.tsx: debounced input calling fetchHistory with search param
+- [X] T097 [US4] Add date range pickers in web/src/pages/History.tsx (date_from, date_to inputs) that trigger fetchHistory
+- [X] T098 [US4] Implement pagination in web/src/pages/History.tsx with "Load More" button or infinite scroll
+- [X] T099 [US4] Show history stats summary at top of web/src/pages/History.tsx: total downloads, success rate, total size
+- [X] T100 [US4] Add filtering by success/failure in web/src/pages/History.tsx with checkbox or toggle
+- [X] T101 [P] [US4] Create web/src/utils/formatters.ts with functions: formatFileSize(bytes), formatDuration(seconds), formatDate(iso_string)
+- [X] T102 [US4] Use formatters in web/src/components/HistoryItem.tsx to display human-readable file sizes and dates
 
 **Checkpoint**: User Story 4 complete - full history browsing, search, filters, all 4 user stories implemented
 
