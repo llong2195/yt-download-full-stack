@@ -6,10 +6,10 @@ from typing import Dict, Optional
 import yt_dlp
 
 from sqlalchemy.orm import Session
-from repository import channel_repo
-from utils.validators import is_youtube_url, extract_channel_id, sanitize_filename
-from utils.config import settings
-from utils.logger import get_logger
+from src.repository import channel_repo
+from src.utils.validators import is_youtube_url, extract_channel_id, sanitize_filename
+from src.utils.config import settings
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

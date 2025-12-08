@@ -2,8 +2,8 @@
 
 from sqlalchemy.orm import Session
 from sqlalchemy import func, and_
-from models.download_task import DownloadTask
-from models.download_history import DownloadHistory
+from src.models.download_task import DownloadTask
+from src.models.download_history import DownloadHistory
 from typing import List, Optional
 from datetime import datetime
 

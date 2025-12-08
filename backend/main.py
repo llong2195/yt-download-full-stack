@@ -7,13 +7,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from huey import SqliteHuey
-
-from utils.config import settings
-from utils.logger import get_logger
-from models import Base, engine
+from src.models import Base, engine
+from src.routers import channels, downloads
+from src.utils.config import settings
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -74,7 +75,6 @@ async def health_check():
 
 
 # Register routers
-from routers import channels, downloads
 
 app.include_router(channels.router, prefix="/api/channels", tags=["channels"])
 app.include_router(downloads.router, prefix="/api/downloads", tags=["downloads"])

@@ -4,9 +4,9 @@ import uuid
 from typing import List, Dict
 from sqlalchemy.orm import Session
 
-from repository import channel_repo, download_repo
-from services import youtube_service, channel_service
-from utils.logger import get_logger
+from src.repository import channel_repo, download_repo
+from src.services import youtube_service, channel_service
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 

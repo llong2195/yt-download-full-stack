@@ -1,7 +1,7 @@
 """Channel repository for database operations."""
 
 from sqlalchemy.orm import Session
-from models.channel import Channel
+from src.models.channel import Channel
 from typing import List, Optional
 
 

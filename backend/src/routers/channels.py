@@ -3,14 +3,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from models.database import get_db
-from models.schemas import (
+from src.models.database import get_db
+from src.models.schemas import (
     ChannelCreate,
     ChannelResponse,
     ChannelListResponse,
     ErrorResponse,
 )
-from services import channel_service
+from src.services import channel_service
 
 router = APIRouter()
 

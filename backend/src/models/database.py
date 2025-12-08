@@ -2,7 +2,7 @@
 
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import declarative_base, sessionmaker
-from utils.config import settings
+from src.utils.config import settings
 
 # Create engine with SQLite WAL mode for better concurrency
 engine = create_engine(

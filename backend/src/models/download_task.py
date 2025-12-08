@@ -2,7 +2,7 @@
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Index
 from sqlalchemy.sql import func
-from models.database import Base
+from .database import Base
 
 
 class DownloadTask(Base):

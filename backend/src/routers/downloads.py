@@ -3,15 +3,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from models.database import get_db
-from models.schemas import (
+from src.models.database import get_db
+from src.models.schemas import (
     DownloadRequest,
     BatchUrlDownloadRequest,
     DownloadTaskResponse,
     BatchDownloadResponse,
     ErrorResponse,
 )
-from services import download_service
+from src.services import download_service
 
 router = APIRouter()
 

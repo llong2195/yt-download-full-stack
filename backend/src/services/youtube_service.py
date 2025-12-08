@@ -2,8 +2,8 @@
 
 import yt_dlp
 from typing import Dict, Optional
-from utils.validators import extract_video_id
-from utils.logger import get_logger
+from src.utils.validators import extract_video_id
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
