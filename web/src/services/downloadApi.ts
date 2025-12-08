@@ -2,21 +2,18 @@
  * API client for download-related endpoints
  */
 
-import { fetchApi } from "./api";
 import type {
-  DownloadRequest,
-  BatchUrlDownloadRequest,
-  DownloadTask,
   BatchDownloadResponse,
+  BatchUrlDownloadRequest,
+  DownloadRequest,
+  DownloadTask,
   QueueStatusResponse,
-  TaskRetryResponse,
-  HistoryListResponse,
-  HistoryStatsResponse,
+  TaskRetryResponse
 } from "../types/download";
+import { fetchApi } from "./api";
 
 const DOWNLOADS_BASE = "/downloads";
 const QUEUE_BASE = "/queue";
-const HISTORY_BASE = "/history";
 
 // ============================================================================
 // Download Endpoints
@@ -72,48 +69,4 @@ export async function retryTask(taskId: string): Promise<TaskRetryResponse> {
   return fetchApi<TaskRetryResponse>(`${QUEUE_BASE}/tasks/${taskId}/retry`, {
     method: "POST",
   });
-}
-
-// ============================================================================
-// History Endpoints
-// ============================================================================
-
-/**
- * Fetch download history with pagination
- */
-export async function fetchHistory(
-  page: number = 1,
-  pageSize: number = 20,
-  channelId?: number,
-  searchQuery?: string
-): Promise<HistoryListResponse> {
-  const params = new URLSearchParams({
-    page: page.toString(),
-    page_size: pageSize.toString(),
-  });
-
-  if (channelId) {
-    params.append("channel_id", channelId.toString());
-  }
-
-  if (searchQuery) {
-    params.append("search", searchQuery);
-  }
-
-  return fetchApi<HistoryListResponse>(`${HISTORY_BASE}?${params.toString()}`);
-}
-
-/**
- * Fetch download statistics
- */
-export async function fetchHistoryStats(
-  channelId?: number
-): Promise<HistoryStatsResponse> {
-  const params = channelId
-    ? new URLSearchParams({ channel_id: channelId.toString() })
-    : "";
-  const url = params
-    ? `${HISTORY_BASE}/stats?${params}`
-    : `${HISTORY_BASE}/stats`;
-  return fetchApi<HistoryStatsResponse>(url);
 }

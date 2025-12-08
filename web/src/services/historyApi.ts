@@ -2,8 +2,8 @@
  * History API client functions
  */
 
-import { fetchApi } from './api';
 import type { HistoryListResponse, HistoryStatsResponse } from '../types/download';
+import { fetchApi } from './api';
 
 export interface HistoryFilters {
   search?: string;
@@ -13,6 +13,8 @@ export interface HistoryFilters {
   limit?: number;
   offset?: number;
 }
+
+const HISTORY_BASE = "/history";
 
 /**
  * Fetch download history with optional filters
@@ -28,7 +30,7 @@ export async function fetchHistory(filters: HistoryFilters = {}): Promise<Histor
   if (filters.offset) params.append('offset', String(filters.offset));
 
   const queryString = params.toString();
-  const url = queryString ? `/api/history?${queryString}` : '/api/history';
+  const url = queryString ? `${HISTORY_BASE}?${queryString}` : `${HISTORY_BASE}`;
 
   return fetchApi<HistoryListResponse>(url, {
     method: 'GET',
@@ -39,7 +41,7 @@ export async function fetchHistory(filters: HistoryFilters = {}): Promise<Histor
  * Fetch history statistics for a given period
  */
 export async function fetchHistoryStats(period: '7d' | '30d' | '90d' | 'all' = 'all'): Promise<HistoryStatsResponse> {
-  return fetchApi<HistoryStatsResponse>(`/api/history/stats?period=${period}`, {
+  return fetchApi<HistoryStatsResponse>(`${HISTORY_BASE}/stats?period=${period}`, {
     method: 'GET',
   });
 }
