@@ -190,11 +190,11 @@ def download_video(task_id: str) -> bool:
             upload_date = None
             if info.get("upload_date"):
                 try:
-                    # Convert to datetime then format as ISO string
-                    upload_date_dt = datetime.strptime(
+                    # Convert to datetime object (not string!)
+                    # SQLite DateTime column requires Python datetime/date object
+                    upload_date = datetime.strptime(
                         info.get("upload_date", None), "%Y%m%d"
                     )
-                    upload_date = upload_date_dt.strftime("%Y-%m-%d")
                 except (ValueError, TypeError):
                     pass
 

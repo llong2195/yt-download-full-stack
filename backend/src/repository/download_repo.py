@@ -151,7 +151,7 @@ def create_history_record(
     task_id: str,
     download_duration_seconds: int,
     success: bool,
-    upload_date: Optional[str] = None,
+    upload_date: Optional[datetime] = None,
     duration: Optional[int] = None,
     file_path: Optional[str] = None,
     file_size: Optional[int] = None,
