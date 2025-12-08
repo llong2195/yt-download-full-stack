@@ -11,6 +11,7 @@ from src.models.schemas import (
     DownloadRequest,
     DownloadTaskResponse,
 )
+from src.repository import download_repo
 from src.services import download_service
 from src.utils.logger import get_logger
 
@@ -98,7 +99,6 @@ async def request_single_download(
         )
 
         # Fetch full task details
-        from src.repository import download_repo
         task = download_repo.get_task_by_task_id(db, result["task_id"])
         if not task:
             raise HTTPException(

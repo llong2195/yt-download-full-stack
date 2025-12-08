@@ -1,5 +1,6 @@
 """YouTube service for video metadata extraction."""
 
+from datetime import datetime
 from typing import Dict, Optional
 
 import yt_dlp
@@ -86,7 +87,6 @@ def extract_video_metadata(video_url: str) -> Dict:
             upload_date_str = None
             if upload_date:
                 try:
-                    from datetime import datetime
                     dt = datetime.strptime(upload_date, "%Y%m%d")
                     upload_date_str = dt.isoformat()
                 except Exception:

@@ -1,15 +1,18 @@
 """Queue API router for monitoring download status."""
 
+import uuid
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-import uuid
 from src.models.database import get_db
 from src.models.schemas import (
-    QueueStatusResponse,
     DownloadTaskResponse,
+    QueueStatusResponse,
     TaskRetryResponse,
 )
 from src.repository import download_repo
+from src.tasks.download_tasks import download_video
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -37,7 +40,6 @@ async def get_queue_status(db: Session = Depends(get_db)):
         downloading_count = sum(1 for t in active_tasks if t.status == 'downloading')
         
         # Get completed and failed counts (today)
-        from datetime import datetime
         today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         
         completed_today = download_repo.get_tasks_by_status(db, 'completed')
@@ -161,8 +163,7 @@ async def retry_failed_task(task_id: str, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(task)
         
-        # Re-enqueue the task
-        from src.tasks.download_tasks import download_video
+        # Re-enqueue the task 
         download_video(task.id)
         
         logger.info(f"Retrying task {task_id} as {new_task_id} (attempt {task.retry_count}/3)")

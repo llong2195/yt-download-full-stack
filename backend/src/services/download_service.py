@@ -1,15 +1,16 @@
 """Download service with business logic for video downloads."""
 
-import uuid
 import shutil
-from typing import List, Dict
-from sqlalchemy.orm import Session
+import uuid
+from typing import Dict, List
 
+from sqlalchemy.orm import Session
 from src.repository import channel_repo, download_repo
-from src.services import youtube_service, channel_service
-from src.utils.logger import get_logger
-from src.utils.error_handlers import DiskSpaceException
+from src.services import channel_service, youtube_service
+from src.tasks.download_tasks import download_video
 from src.utils.config import settings
+from src.utils.error_handlers import DiskSpaceException
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
@@ -200,6 +201,9 @@ def request_batch_download_by_urls(
                     })
                     continue
 
+            if not channel:
+                raise DownloadServiceError("Channel could not be found or created")
+            
             # Create download task
             task_id = str(uuid.uuid4())
             task = download_repo.create_download_task(
@@ -211,7 +215,6 @@ def request_batch_download_by_urls(
             )
 
             # Enqueue download task with Huey
-            from src.tasks.download_tasks import download_video
             download_video(task.id)
 
             results["total_created"] += 1
