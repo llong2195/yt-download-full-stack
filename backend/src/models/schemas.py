@@ -149,8 +149,9 @@ class HistoryListResponse(BaseModel):
 
     history: list[DownloadHistoryResponse]
     total: int
-    page: int
-    page_size: int
+    limit: int
+    offset: int
+    filters_applied: dict[str, str | bool]
 
 
 class HistoryStatsResponse(BaseModel):

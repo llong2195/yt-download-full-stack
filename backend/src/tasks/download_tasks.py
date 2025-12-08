@@ -2,18 +2,18 @@
 
 import os
 import time
-from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from pathlib import Path
 
 import yt_dlp
+import yt_dlp.utils
 from sqlalchemy.orm import Session
-
 from src.models.database import SessionLocal
 from src.models.download_task import DownloadTask
-from src.repository import download_repo, channel_repo
+from src.repository import channel_repo, download_repo
 from src.utils.logger import get_logger
 from src.utils.validators import sanitize_filename
+
 from .huey_instance import huey
 
 logger = get_logger(__name__)
@@ -22,7 +22,7 @@ logger = get_logger(__name__)
 class DownloadProgress:
     """Track download progress for yt-dlp hook."""
 
-    def __init__(self, task_id: int, db: Session):
+    def __init__(self, task_id: str, db: Session):
         self.task_id = task_id
         self.db = db
         self.last_update = 0
@@ -52,7 +52,7 @@ class DownloadProgress:
 
 
 @huey.task(retries=3, retry_delay=60)
-def download_video(task_id: int) -> bool:
+def download_video(task_id: str) -> bool:
     """
     Download video from YouTube using yt-dlp.
 
@@ -73,6 +73,9 @@ def download_video(task_id: int) -> bool:
         # Get task from database
         task = download_repo.get_task_by_id(db, task_id)
         if not task:
+            print(
+                f"No task found for task_id {task_id} during unexpected error handling."
+            )
             logger.error(f"Task {task_id} not found in database")
             return False
 
@@ -81,15 +84,13 @@ def download_video(task_id: int) -> bool:
         if not channel:
             logger.error(f"Channel {task.channel_id} not found for task {task_id}")
             download_repo.update_task_status(
-                db, task_id, status="failed", error_message="Channel not found"
+                db, task.task_id, status="failed", error_message="Channel not found"
             )
             db.commit()
             return False
 
-        # Update status to downloading
-        download_repo.update_task_status(
-            db, task_id, status="downloading", started_at=start_time
-        )
+        # Update status to downloading (started_at is set automatically in update_task_status)
+        download_repo.update_task_status(db, task.task_id, status="downloading")
         db.commit()
 
         logger.info(f"Starting download for task {task_id}: {task.video_url}")
@@ -102,7 +103,7 @@ def download_video(task_id: int) -> bool:
         output_template = str(download_path / f"{task.video_id}.%(ext)s")
 
         # Configure yt-dlp options
-        ydl_opts = {
+        ydl_opts: yt_dlp._Params = {
             "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
             "outtmpl": output_template,
             "progress_hooks": [DownloadProgress(task_id, db)],
@@ -143,13 +144,12 @@ def download_video(task_id: int) -> bool:
             end_time = datetime.now()
             download_duration = int((end_time - start_time).total_seconds())
 
-            # Update task status to completed
+            # Update task status to completed (completed_at is set automatically)
             download_repo.update_task_status(
                 db,
-                task_id,
+                task.task_id,
                 status="completed",
                 progress_percent=100,
-                completed_at=end_time,
             )
             db.commit()
 
@@ -157,7 +157,11 @@ def download_video(task_id: int) -> bool:
             upload_date = None
             if info.get("upload_date"):
                 try:
-                    upload_date = datetime.strptime(info["upload_date"], "%Y%m%d")
+                    # Convert to datetime then format as ISO string
+                    upload_date_dt = datetime.strptime(
+                        info.get("upload_date", None), "%Y%m%d"
+                    )
+                    upload_date = upload_date_dt.strftime("%Y-%m-%d")
                 except (ValueError, TypeError):
                     pass
 
@@ -165,7 +169,7 @@ def download_video(task_id: int) -> bool:
                 db,
                 channel_id=task.channel_id,
                 video_id=task.video_id,
-                video_title=info.get("title", "Unknown"),
+                video_title=info.get("title", "Unknown") or "Unknown",
                 video_url=task.video_url,
                 task_id=task.task_id,
                 upload_date=upload_date,
@@ -185,16 +189,22 @@ def download_video(task_id: int) -> bool:
         error_msg = str(e)
         logger.error(f"Download failed for task {task_id}: {error_msg}")
 
+        if not task:
+            print(
+                f"No task found for task_id {task_id} during unexpected error handling."
+            )
+            db.close()
+            return False
         # Update task status
         download_repo.update_task_status(
             db,
-            task_id,
+            task.task_id,
             status="failed",
             error_message=error_msg[:500],  # Limit error message length
         )
 
         # Increment retry count
-        task = download_repo.get_task_by_id(db, task_id)
+        task = download_repo.get_task_by_task_id(db, task.task_id)
         if task:
             task.retry_count += 1
 
@@ -204,6 +214,11 @@ def download_video(task_id: int) -> bool:
         end_time = datetime.now()
         download_duration = int((end_time - start_time).total_seconds())
 
+        if not task:
+            print(
+                f"No task found for task_id {task_id} during unexpected error handling."
+            )
+            return False
         download_repo.create_history_record(
             db,
             channel_id=task.channel_id,
@@ -225,12 +240,17 @@ def download_video(task_id: int) -> bool:
         logger.error(f"Unexpected error for task {task_id}: {error_msg}")
 
         try:
+            if not task:
+                print(
+                    f"No task found for task_id {task_id} during unexpected error handling."
+                )
+                return False
             download_repo.update_task_status(
-                db, task_id, status="failed", error_message=error_msg[:500]
+                db, task.task_id, status="failed", error_message=error_msg[:500]
             )
 
             # Increment retry count
-            task = download_repo.get_task_by_id(db, task_id)
+            task = download_repo.get_task_by_task_id(db, task.task_id)
             if task:
                 task.retry_count += 1
 
@@ -239,6 +259,12 @@ def download_video(task_id: int) -> bool:
             # Create failed history record
             end_time = datetime.now()
             download_duration = int((end_time - start_time).total_seconds())
+
+            if not task:
+                print(
+                    f"No task found for task_id {task_id} during unexpected error handling."
+                )
+                return False
 
             download_repo.create_history_record(
                 db,

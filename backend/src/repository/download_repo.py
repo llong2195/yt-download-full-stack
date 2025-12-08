@@ -13,7 +13,7 @@ from src.models.download_task import DownloadTask
 # ============================================================================
 
 
-def get_task_by_id(db: Session, task_id: int) -> Optional[DownloadTask]:
+def get_task_by_id(db: Session, task_id: str) -> Optional[DownloadTask]:
     """Get download task by internal ID."""
     return db.query(DownloadTask).filter(DownloadTask.id == task_id).first()
 

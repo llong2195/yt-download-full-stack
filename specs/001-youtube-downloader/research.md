@@ -99,7 +99,7 @@ app = FastAPI(lifespan=lifespan)
 import yt_dlp
 
 def download_video(video_url: str, output_dir: str):
-    ydl_opts = {
+    ydl_opts: yt_dlp._Params = {
         'format': 'best',
         'outtmpl': f'{output_dir}/%(id)s-%(title)s.%(ext)s',
         'progress_hooks': [progress_callback],

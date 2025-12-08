@@ -91,7 +91,7 @@ async def get_history(
         ]
 
         # Build filters_applied dict
-        filters_applied = {}
+        filters_applied: dict[str, str | bool] = {}
         if search:
             filters_applied["search"] = search
         if date_from:
@@ -99,7 +99,7 @@ async def get_history(
         if date_to:
             filters_applied["date_to"] = date_to
         if success is not None:
-            filters_applied["success"] = success
+            filters_applied["success"] = bool(success)
 
         return HistoryListResponse(
             history=history_responses,

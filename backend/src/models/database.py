@@ -47,8 +47,8 @@ def verify_indexes():
     inspector = inspect(engine)
     results = {}
 
-    # Check each table's indexes
-    for table_name in ["channel", "download_task", "download_history"]:
+    # Check each table's indexes (using actual table names: plural form)
+    for table_name in ["channels", "download_tasks", "download_history"]:
         indexes = inspector.get_indexes(table_name)
         results[table_name] = {
             "indexes": [idx["name"] for idx in indexes],

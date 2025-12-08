@@ -152,7 +152,7 @@ def request_batch_download_by_urls(
     # Check disk space before processing batch
     check_disk_space()
 
-    results = {
+    results: dict = {
         "total_requested": len(video_urls),
         "total_created": 0,
         "total_skipped": 0,
