@@ -1,7 +1,7 @@
 """Channel service with business logic."""
 
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Literal
 
 import yt_dlp
 import yt_dlp.utils
@@ -56,8 +56,37 @@ def extract_channel_info(url: str) -> Dict[str, str]:
         ydl_opts: yt_dlp._Params = {
             "quiet": True,
             "no_warnings": True,
-            "extract_flat": True,
             "skip_download": "True",
+            "extract_flat": "in_playlist",  # Fastest flat extraction mode
+            "lazy_playlist": True,  # Don't load all entries at once
+            # Disable all unnecessary processing
+            "writesubtitles": False,
+            "writeautomaticsub": False,
+            "writeinfojson": False,
+            "writedescription": False,
+            "write_all_thumbnails": False,
+            "noplaylist": False,
+            "ignoreerrors": True,  # Continue on errors
+            "nocheckcertificate": True,
+            "ignore_no_formats_error": True,
+            "skip_unavailable_fragments": True,
+            # Minimal extractor work
+            "extractor_args": {
+                "youtube": {
+                    "lang": ["ja"],
+                    "player_skip": ["js", "configs", "webpage"],
+                    "skip": ["hls", "dash", "translated_subs", "comments", "webpage"],
+                }
+            },
+            "compat_opts": {
+                "no-youtube-channel-redirect": True,
+                "no-youtube-staleness-check": True,
+            },
+            # No cookies/auth
+            "cookiefile": None,
+            "usenetrc": False,
+            "cookiesfrombrowser": None,
+            "force_generic_extractor": False,
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -138,11 +167,14 @@ def validate_and_add_channel(db: Session, url: str) -> Dict:
 
     # Check for duplicates
     existing = channel_repo.get_channel_by_youtube_id(db, channel_info["channel_id"])
+
     if existing:
+        # Recreate download directory
+        download_path = create_channel_directory(channel_info["name"])
         raise DuplicateChannelError(f"Channel '{existing.name}' already exists")
 
-    # Create download directory
-    download_path = create_channel_directory(channel_info["channel_id"])
+    # Recreate download directory
+    download_path = create_channel_directory(channel_info["name"])
 
     # Save to database
     channel = channel_repo.create_channel(

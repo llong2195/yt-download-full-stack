@@ -1,5 +1,21 @@
 # Huey Task Queue - Hướng Dẫn Sử Dụng
 
+## Tự Động Tạo Database
+
+✅ **Huey database được tự động tạo khi ứng dụng khởi động!**
+
+- Database file: `data/huey.db`
+- Tự động kiểm tra và tạo nếu chưa tồn tại
+- Kiểm tra permissions và khả năng ghi
+- Log confirmation khi database ready
+
+**Xác minh setup:**
+```bash
+python verify_setup.py
+```
+
+---
+
 ## Vấn Đề: Tasks vào queue nhưng không chạy
 
 **Nguyên nhân**: Huey cần một consumer process riêng để xử lý các task trong queue.

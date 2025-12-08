@@ -30,6 +30,8 @@ logger = get_logger(__name__)
 
 # Ensure directories exist
 settings.ensure_directories()
+
+# Ensure FFmpeg is installed
 installer = ffmpeg_installer.FFmpegInstaller()
 if installer.is_installed():
     # Add to PATH

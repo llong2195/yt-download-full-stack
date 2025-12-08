@@ -1,6 +1,7 @@
 """Huey background tasks for video downloads."""
 
 import os
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -19,6 +20,19 @@ from .huey_instance import huey
 logger = get_logger(__name__)
 
 
+def strip_ansi_codes(text: str) -> str:
+    """Remove ANSI escape sequences from text.
+
+    Args:
+        text: String potentially containing ANSI codes
+
+    Returns:
+        Clean string without ANSI codes
+    """
+    ansi_escape = re.compile(r"\x1b\[[0-9;]*m")
+    return ansi_escape.sub("", text)
+
+
 class DownloadProgress:
     """Track download progress for yt-dlp hook."""
 
@@ -34,8 +48,21 @@ class DownloadProgress:
             current_time = time.time()
             if current_time - self.last_update >= 2:
                 try:
-                    percent_str = d.get("_percent_str", "0%").strip().replace("%", "")
+                    # Get progress percentage from yt-dlp
+                    percent_str = d.get("_percent_str", "0%")
+
+                    # Remove ANSI color codes (e.g., \x1b[0;94m)
+                    percent_str = strip_ansi_codes(str(percent_str))
+
+                    # Clean up: remove %, spaces, and other non-numeric chars except decimal point
+                    percent_str = percent_str.strip().replace("%", "").replace(" ", "")
+
+                    # Parse to float then int
                     progress = int(float(percent_str))
+
+                    # Clamp between 0-100
+                    progress = max(0, min(100, progress))
+
                     download_repo.update_task_status(
                         self.db,
                         self.task_id,
@@ -44,8 +71,14 @@ class DownloadProgress:
                     )
                     self.db.commit()
                     self.last_update = current_time
-                except (ValueError, KeyError) as e:
-                    logger.warning(f"Failed to parse progress: {e}")
+
+                except (ValueError, TypeError, KeyError) as e:
+                    # Log with the actual problematic string for debugging
+                    raw_percent = d.get("_percent_str", "N/A")
+                    logger.warning(
+                        f"Failed to parse progress: {e} "
+                        f"(raw: {repr(raw_percent)}, cleaned: {repr(percent_str if 'percent_str' in locals() else 'N/A')})"
+                    )
 
         elif d["status"] == "finished":
             logger.info(f"Download finished for task {self.task_id}")

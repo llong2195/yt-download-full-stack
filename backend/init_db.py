@@ -23,6 +23,21 @@ def main():
     print(f"   ✅ Data directory: {Path(settings.HUEY_DB).parent}")
     print(f"   ✅ Downloads directory: {settings.DOWNLOAD_DIR}")
 
+    # Initialize Huey database
+    print("\n🔄 Initializing Huey task queue database...")
+    try:
+        settings.ensure_huey_database()
+        huey_db_path = Path(settings.HUEY_DB)
+        if huey_db_path.exists():
+            size_kb = huey_db_path.stat().st_size / 1024
+            print(f"   ✅ Huey DB ready: {huey_db_path.absolute()}")
+            print(f"      Size: {size_kb:.2f} KB")
+        else:
+            print(f"   ✅ Huey DB initialized: {huey_db_path.absolute()}")
+    except Exception as e:
+        print(f"   ❌ Failed to initialize Huey DB: {e}")
+        return 1
+
     # Create all tables
     print("\n🗄️  Creating database tables...")
     Base.metadata.create_all(bind=engine)
