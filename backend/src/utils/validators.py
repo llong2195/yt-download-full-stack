@@ -37,7 +37,7 @@ def is_valid_url(url: str) -> bool:
         return False
 
 
-def is_youtube_url(url: str, url_type: str = None) -> bool:
+def is_youtube_url(url: str, url_type: str | None = None) -> bool:
     """Check if URL is a valid YouTube URL.
 
     Args:

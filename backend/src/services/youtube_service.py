@@ -1,9 +1,11 @@
 """YouTube service for video metadata extraction."""
 
-import yt_dlp
 from typing import Dict, Optional
-from src.utils.validators import extract_video_id
+
+import yt_dlp
+import yt_dlp.utils
 from src.utils.logger import get_logger
+from src.utils.validators import extract_video_id
 
 logger = get_logger(__name__)
 
@@ -52,10 +54,10 @@ def extract_video_metadata(video_url: str) -> Dict:
         MetadataFetchError: If metadata extraction fails
     """
     try:
-        ydl_opts = {
+        ydl_opts: yt_dlp._Params = {
             "quiet": True,
             "no_warnings": True,
-            "skip_download": True,
+            "skip_download": 'True',
             "extract_flat": False,
         }
 

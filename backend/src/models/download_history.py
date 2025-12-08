@@ -1,10 +1,10 @@
 """DownloadHistory model for audit logging with video metadata."""
 
 from datetime import datetime
+
 from sqlalchemy import (
     BigInteger,
     Boolean,
-    Column,
     DateTime,
     ForeignKey,
     Index,

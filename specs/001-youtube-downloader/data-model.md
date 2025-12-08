@@ -260,7 +260,7 @@ CREATE INDEX idx_history_video_date ON download_history(video_id, download_date)
 
 ```python
 # backend/models/database.py
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, Boolean, BigInteger, Text, ForeignKey, CheckConstraint
+from sqlalchemy import create_engine, Integer, String, DateTime, Boolean, BigInteger, Text, ForeignKey, CheckConstraint
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime

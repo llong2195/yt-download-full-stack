@@ -1,9 +1,11 @@
 """Channel model representing YouTube channels."""
 
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, DateTime
+
+from sqlalchemy import DateTime, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
+
 from .database import Base
 
 
