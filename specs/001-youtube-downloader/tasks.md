@@ -28,7 +28,7 @@
 - [ ] T002 Create web directory structure: web/src/components, web/src/pages, web/src/services, web/src/types, web/src/utils
 - [ ] T003 Create backend/requirements.txt with dependencies: fastapi==0.104.1, uvicorn[standard]==0.24.0, sqlalchemy==2.0.23, pydantic==2.5.0, huey==2.5.0, yt-dlp==2023.11.16, python-multipart==0.0.6
 - [ ] T004 [P] Initialize Python virtual environment and install backend dependencies: python -m venv backend/venv && pip install -r backend/requirements.txt
-- [ ] T005 [P] Initialize web/package.json with dependencies: react@18.2.0, react-dom@18.2.0, react-router-dom@6.20.0, typescript@5.3.3, vite@5.0.8, vitest@1.0.4
+- [ ] T005 [P] Initialize web/package.json with dependencies: react@19.2.0, react-dom@19.2.0, react-router@7.10.1, typescript@5.9.3, vite@7.2.4, @vitejs/plugin-react@5.1.1
 - [ ] T006 [P] Install web dependencies: cd web && pnpm install
 - [ ] T007 Create data/ and downloads/ directories at repository root for SQLite database and video storage
 - [ ] T008 [P] Create web/vite.config.ts with proxy configuration for /api to http://localhost:8000
@@ -86,8 +86,8 @@
 - [ ] T035 [P] [US1] Create web/src/components/ChannelCard.tsx to display channel info (name, URL, date added, video count, delete button)
 - [ ] T036 [P] [US1] Create web/src/components/ChannelList.tsx to render list of ChannelCard components
 - [ ] T037 [US1] Create web/src/pages/Channels.tsx with add channel form, channel list, and state management
-- [ ] T038 [US1] Add routing in web/src/App.tsx with react-router-dom: / → Channels page
-- [ ] T039 [US1] Create web/src/main.tsx as React entry point with StrictMode and Router
+- [ ] T038 [US1] Add routing in web/src/App.tsx with react-router v7 (BrowserRouter, Routes, Route): / → Channels page
+- [ ] T039 [US1] Create web/src/main.tsx as React entry point with StrictMode and BrowserRouter from react-router
 - [ ] T040 [US1] Add loading states and error messages in web/src/pages/Channels.tsx for add/delete operations
 - [ ] T041 [US1] Style web/src/pages/Channels.tsx with basic CSS for layout and form (or use Shadcn Button, Input components)
 
@@ -127,8 +127,8 @@
 - [ ] T060 [US2] Update web/src/services/channelApi.ts to add fetchChannelVideos(channel_id) function
 - [ ] T061 [P] [US2] Create web/src/components/VideoCard.tsx to display video info with download button (disabled if already downloaded)
 - [ ] T062 [US2] Create web/src/pages/Downloads.tsx with channel selector, video list, download button per video, and "Download All" button
-- [ ] T063 [US2] Add Downloads route in web/src/App.tsx: /downloads → Downloads page
-- [ ] T064 [US2] Add navigation menu in web/src/App.tsx with links to Channels, Downloads, Queue, History pages
+- [ ] T063 [US2] Add Downloads route in web/src/App.tsx using <Route path="/downloads" element={<Downloads />} />
+- [ ] T064 [US2] Add navigation menu in web/src/App.tsx using <Link> components from react-router for Channels, Downloads, Queue, History pages
 - [ ] T065 [US2] Show success toast notification in web/src/pages/Downloads.tsx when download is queued (task_id returned)
 - [ ] T066 [US2] Show error messages in web/src/pages/Downloads.tsx for duplicate downloads or failures
 - [ ] T067 [US2] Disable download button in web/src/components/VideoCard.tsx if video.is_downloaded === true
@@ -158,7 +158,7 @@
 - [ ] T075 [P] [US3] Create web/src/services/queueApi.ts with functions: fetchQueueStatus(), fetchTaskStatus(task_id), retryTask(task_id)
 - [ ] T076 [P] [US3] Create web/src/components/QueueItem.tsx to display task info (video title, status badge, progress bar, error message, retry button if failed)
 - [ ] T077 [US3] Create web/src/pages/Queue.tsx with queue summary stats (pending, downloading, completed_today, failed_today) and task list
-- [ ] T078 [US3] Add Queue route in web/src/App.tsx: /queue → Queue page
+- [ ] T078 [US3] Add Queue route in web/src/App.tsx using <Route path="/queue" element={<Queue />} />
 - [ ] T079 [US3] Implement polling in web/src/pages/Queue.tsx: useEffect with setInterval every 2500ms to fetch queue status
 - [ ] T080 [US3] Show progress bar in web/src/components/QueueItem.tsx for tasks with status=downloading (0-100%)
 - [ ] T081 [US3] Add retry button in web/src/components/QueueItem.tsx for failed tasks (calls retryTask API)
@@ -191,7 +191,7 @@
 - [ ] T092 [P] [US4] Create web/src/services/historyApi.ts with functions: fetchHistory(filters), fetchHistoryStats(period)
 - [ ] T093 [P] [US4] Create web/src/components/HistoryItem.tsx to display history record (video title, channel, date, file size, duration, success badge)
 - [ ] T094 [US4] Create web/src/pages/History.tsx with search input, date range filters, success filter checkbox, and history list
-- [ ] T095 [US4] Add History route in web/src/App.tsx: /history → History page
+- [ ] T095 [US4] Add History route in web/src/App.tsx using <Route path="/history" element={<History />} />
 - [ ] T096 [US4] Implement search functionality in web/src/pages/History.tsx: debounced input calling fetchHistory with search param
 - [ ] T097 [US4] Add date range pickers in web/src/pages/History.tsx (date_from, date_to inputs) that trigger fetchHistory
 - [ ] T098 [US4] Implement pagination in web/src/pages/History.tsx with "Load More" button or infinite scroll
@@ -410,6 +410,8 @@ With multiple developers:
 
 ## Notes
 
+- **Version Updates**: Tasks use actual package.json versions (React 19.2.0, react-router 7.10.1, TypeScript 5.9.3, Vite 7.2.4)
+- **Routing**: Uses react-router v7 API (BrowserRouter, Routes, Route, Link) not react-router-dom v6
 - No test tasks included (MVP does not require automated tests per research.md)
 - Use quickstart.md for manual validation of each user story
 - Commit after each task or logical group
