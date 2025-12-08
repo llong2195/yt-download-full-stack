@@ -26,7 +26,7 @@
 
 - [ ] T001 Create backend directory structure: backend/models, backend/repository, backend/services, backend/routers, backend/tasks, backend/utils
 - [ ] T002 Create web directory structure: web/src/components, web/src/pages, web/src/services, web/src/types, web/src/utils
-- [ ] T003 Create backend/requirements.txt with dependencies: fastapi==0.104.1, uvicorn[standard]==0.24.0, sqlalchemy==2.0.23, pydantic==2.5.0, huey==2.5.0, yt-dlp==2023.11.16, python-multipart==0.0.6
+- [ ] T003 Create backend/requirements.txt with dependencies: fastapi==0.124.0, uvicorn==0.38.0, SQLAlchemy==2.0.44, pydantic==2.12.5, huey==2.5.5, yt-dlp==2025.12.8
 - [ ] T004 [P] Initialize Python virtual environment and install backend dependencies: python -m venv backend/venv && pip install -r backend/requirements.txt
 - [ ] T005 [P] Initialize web/package.json with dependencies: react@19.2.0, react-dom@19.2.0, react-router@7.10.1, typescript@5.9.3, vite@7.2.4, @vitejs/plugin-react@5.1.1
 - [ ] T006 [P] Install web dependencies: cd web && pnpm install

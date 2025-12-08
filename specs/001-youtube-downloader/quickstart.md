@@ -109,13 +109,12 @@ You should see:
 #### requirements.txt
 
 ```txt
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-sqlalchemy==2.0.23
-pydantic==2.5.0
-huey==2.5.0
-yt-dlp==2023.11.16
-python-multipart==0.0.6
+fastapi==0.124.0
+uvicorn==0.38.0
+SQLAlchemy==2.0.44
+pydantic==2.12.5
+huey==2.5.5
+yt-dlp==2025.12.8
 ```
 
 #### Environment Variables (Optional)
