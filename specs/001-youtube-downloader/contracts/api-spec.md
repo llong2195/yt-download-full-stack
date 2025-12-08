@@ -14,6 +14,29 @@
 
 ---
 
+## Endpoint Summary
+
+| Method   | Endpoint                        | Description                                               | User Story |
+| -------- | ------------------------------- | --------------------------------------------------------- | ---------- |
+| GET      | `/api/channels`                 | List all tracked channels                                 | US1        |
+| POST     | `/api/channels`                 | Add new channel                                           | US1        |
+| DELETE   | `/api/channels/{id}`            | Remove channel                                            | US1        |
+| GET      | `/api/channels/{id}/videos`     | Get videos from channel                                   | US2        |
+| POST     | `/api/videos/fetch`             | Fetch videos from channel                                 | US2        |
+| POST     | `/api/downloads`                | Request single video download                             | US2        |
+| POST     | `/api/downloads/batch`          | Request batch download by video IDs                       | US2        |
+| **POST** | **`/api/downloads/batch-urls`** | **Request batch download by URLs (auto-detect channels)** | **US2**    |
+| GET      | `/api/queue/status`             | Get queue status and active tasks                         | US3        |
+| GET      | `/api/queue/tasks/{id}`         | Get specific task status                                  | US3        |
+| POST     | `/api/queue/tasks/{id}/retry`   | Retry failed task                                         | US3        |
+| GET      | `/api/history`                  | Get download history with filters                         | US4        |
+| GET      | `/api/history/stats`            | Get download statistics                                   | US4        |
+| GET      | `/api/health`                   | Health check                                              | -          |
+
+**Total Endpoints**: 14 (13 original + 1 new batch-urls)
+
+---
+
 ## Endpoints
 
 ### 1. Channels API
@@ -327,6 +350,142 @@ Request multiple video downloads at once.
 
 ---
 
+#### `POST /api/downloads/batch-urls`
+
+Request downloads by providing video URLs (auto-detects channels).
+
+**Request**:
+
+```json
+{
+  "video_urls": [
+    "https://www.youtube.com/watch?v=r6cdSHo-LdM",
+    "https://youtu.be/dQw4w9WgXcQ",
+    "https://www.youtube.com/watch?v=abc123xyz"
+  ]
+}
+```
+
+**Validation**:
+
+- `video_urls` required, array of 1-100 video URLs
+- Each URL must be valid YouTube video URL format
+- Accepted patterns:
+  - `https://www.youtube.com/watch?v=VIDEO_ID`
+  - `https://youtu.be/VIDEO_ID`
+  - `https://m.youtube.com/watch?v=VIDEO_ID`
+
+**Processing Logic**:
+
+1. Extract video_id from each URL
+2. Fetch video metadata from YouTube (including channel_id, title, duration)
+3. Auto-detect channel: if channel doesn't exist in DB, create it automatically
+4. Check if video already downloaded (search DownloadHistory)
+5. Check if download already in progress (search DownloadTask)
+6. Enqueue valid downloads to Huey
+7. Create DownloadTask records
+
+**Response** (202 Accepted):
+
+```json
+{
+  "total_requested": 3,
+  "queued": 2,
+  "skipped": 1,
+  "channels_created": 1,
+  "tasks": [
+    {
+      "video_id": "r6cdSHo-LdM",
+      "video_url": "https://www.youtube.com/watch?v=r6cdSHo-LdM",
+      "video_title": "Amazing Video Title",
+      "channel_id": "UC1234567890abcdefghijk",
+      "channel_name": "Example Channel",
+      "task_id": "550e8400-e29b-41d4-a716-446655440000",
+      "status": "pending",
+      "created_channel": true
+    },
+    {
+      "video_id": "dQw4w9WgXcQ",
+      "video_url": "https://youtu.be/dQw4w9WgXcQ",
+      "video_title": "Never Gonna Give You Up",
+      "channel_id": "UC1234567890abcdefghijk",
+      "channel_name": "Example Channel",
+      "task_id": "660e8400-e29b-41d4-a716-446655440001",
+      "status": "pending",
+      "created_channel": false
+    }
+  ],
+  "skipped_videos": [
+    {
+      "video_url": "https://www.youtube.com/watch?v=abc123xyz",
+      "video_id": "abc123xyz",
+      "reason": "Already downloaded",
+      "downloaded_date": "2025-12-07T10:30:00Z"
+    }
+  ],
+  "errors": []
+}
+```
+
+**Errors** (Partial Success Allowed):
+
+If some URLs are invalid, they're included in `errors` array while valid ones are processed:
+
+```json
+{
+  "total_requested": 3,
+  "queued": 1,
+  "skipped": 0,
+  "channels_created": 0,
+  "tasks": [...],
+  "skipped_videos": [],
+  "errors": [
+    {
+      "video_url": "https://www.youtube.com/watch?v=invalid",
+      "error_code": "VIDEO_UNAVAILABLE",
+      "message": "Video not found or private"
+    },
+    {
+      "video_url": "https://www.youtube.com/watch?v=deleted123",
+      "error_code": "METADATA_FETCH_FAILED",
+      "message": "Unable to fetch video information from YouTube"
+    }
+  ]
+}
+```
+
+**Complete Failure Errors**:
+
+- `400 Bad Request`: No valid URLs provided
+  ```json
+  {
+    "error_code": "INVALID_REQUEST",
+    "user_message": "No valid video URLs provided",
+    "technical_details": "video_urls must be array of 1-100 YouTube URLs"
+  }
+  ```
+- `503 Service Unavailable`: YouTube API rate limit
+  ```json
+  {
+    "error_code": "RATE_LIMIT_EXCEEDED",
+    "user_message": "Too many requests. Please try again in a few minutes.",
+    "technical_details": "YouTube API rate limit exceeded",
+    "retry_possible": true,
+    "retry_after_seconds": 300
+  }
+  ```
+
+**Notes**:
+
+- This endpoint is more user-friendly than `/batch` as it only requires URLs
+- Channels are created automatically with pattern: `downloads/{channel_id}/`
+- Response includes which channels were newly created
+- Partial success: some videos can be queued while others fail
+- Duplicate detection across both DownloadHistory and active DownloadTasks
+- Videos from same channel reuse existing channel record
+
+---
+
 ### 4. Queue API
 
 #### `GET /api/queue/status`
@@ -611,6 +770,7 @@ All error responses follow this structure:
 **Error Codes**:
 
 - `INVALID_URL`: Malformed URL
+- `INVALID_REQUEST`: Invalid request payload
 - `CHANNEL_EXISTS`: Duplicate channel
 - `CHANNEL_NOT_FOUND`: Channel doesn't exist in DB or YouTube
 - `VIDEO_NOT_FOUND`: Video doesn't exist
@@ -618,8 +778,9 @@ All error responses follow this structure:
 - `DOWNLOAD_IN_PROGRESS`: Active task exists for video
 - `CANNOT_RETRY`: Task not in failed status
 - `MAX_RETRIES_EXCEEDED`: Reached retry limit (3)
-- `RATE_LIMIT`: YouTube rate limiting active
+- `RATE_LIMIT_EXCEEDED`: YouTube rate limiting active
 - `VIDEO_UNAVAILABLE`: Video is private/deleted/geo-blocked
+- `METADATA_FETCH_FAILED`: Unable to fetch video metadata from YouTube
 - `DISK_FULL`: Insufficient storage space
 - `INTERNAL_ERROR`: Unexpected server error
 
