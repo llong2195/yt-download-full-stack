@@ -1,5 +1,5 @@
 """Routers package."""
 
-from . import channels, downloads
+from . import channels, downloads, queue
 
-__all__ = ["channels", "downloads"]
+__all__ = ["channels", "downloads", "queue"]

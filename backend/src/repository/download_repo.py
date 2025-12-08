@@ -1,12 +1,12 @@
 """Download repository for download tasks and history."""
 
-from sqlalchemy.orm import Session
-from sqlalchemy import func, and_
-from src.models.download_task import DownloadTask
-from src.models.download_history import DownloadHistory
-from typing import List, Optional
 from datetime import datetime
+from typing import List, Optional
 
+from sqlalchemy import and_, func
+from sqlalchemy.orm import Session
+from src.models.download_history import DownloadHistory
+from src.models.download_task import DownloadTask
 
 # ============================================================================
 # DownloadTask Repository
@@ -114,6 +114,27 @@ def get_all_active_tasks(db: Session) -> List[DownloadTask]:
         .order_by(DownloadTask.created_at.desc())
         .all()
     )
+
+
+def get_task_with_channel_info(db: Session, task_id: str) -> Optional[dict]:
+    """Get task with channel information via JOIN."""
+    from src.models.channel import Channel
+    
+    result = (
+        db.query(DownloadTask, Channel)
+        .join(Channel, DownloadTask.channel_id == Channel.id)
+        .filter(DownloadTask.task_id == task_id)
+        .first()
+    )
+    
+    if not result:
+        return None
+    
+    task, channel = result
+    return {
+        "task": task,
+        "channel": channel,
+    }
 
 
 # ============================================================================

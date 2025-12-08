@@ -1,8 +1,10 @@
 """Channel repository for database operations."""
 
+from datetime import datetime
+from typing import List, Optional
+
 from sqlalchemy.orm import Session
 from src.models.channel import Channel
-from typing import List, Optional
 
 
 def get_all_channels(db: Session) -> List[Channel]:
@@ -115,7 +117,6 @@ def update_channel_metadata(
     if name is not None:
         channel.name = name
 
-    from datetime import datetime
     channel.last_updated = datetime.utcnow()
 
     db.commit()

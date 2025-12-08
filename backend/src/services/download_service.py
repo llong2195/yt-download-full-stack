@@ -79,9 +79,9 @@ def request_download(
         video_url=video_url,
     )
 
-    # Enqueue download task (will be implemented with Huey)
-    # from tasks.download_tasks import perform_download
-    # perform_download(task_id)
+    # Enqueue download task with Huey
+    from src.tasks.download_tasks import download_video
+    download_video(task.id)
 
     logger.info(f"Download requested for video {video_id} (task {task_id})")
 
@@ -169,9 +169,9 @@ def request_batch_download_by_urls(
                 video_url=url,
             )
 
-            # Enqueue download (Huey integration to be implemented)
-            # from tasks.download_tasks import perform_download
-            # perform_download(task_id)
+            # Enqueue download task with Huey
+            from src.tasks.download_tasks import download_video
+            download_video(task.id)
 
             results["total_created"] += 1
             results["tasks"].append({

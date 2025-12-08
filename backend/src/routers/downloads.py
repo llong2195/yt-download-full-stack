@@ -5,10 +5,10 @@ from sqlalchemy.orm import Session
 
 from src.models.database import get_db
 from src.models.schemas import (
-    DownloadRequest,
-    BatchUrlDownloadRequest,
-    DownloadTaskResponse,
     BatchDownloadResponse,
+    BatchUrlDownloadRequest,
+    DownloadRequest,
+    DownloadTaskResponse,
     ErrorResponse,
 )
 from src.services import download_service
@@ -94,8 +94,7 @@ async def request_single_download(
         )
 
         # Fetch full task details
-        from repository import download_repo
-
+        from src.repository import download_repo
         task = download_repo.get_task_by_task_id(db, result["task_id"])
         if not task:
             raise HTTPException(
@@ -103,7 +102,7 @@ async def request_single_download(
                 detail="Task created but not found in database",
             )
 
-        return DownloadTaskResponse.from_orm(task)
+        return DownloadTaskResponse.model_validate(task)
 
     except download_service.DuplicateDownloadError as e:
         raise HTTPException(

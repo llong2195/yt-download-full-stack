@@ -109,11 +109,11 @@
 - [x] T045 [US2] Add extract_video_id_from_url(url) function to backend/services/youtube_service.py supporting 3 URL patterns (youtube.com/watch, youtu.be, m.youtube.com)
 - [x] T046 [US2] Add auto_create_channel(channel_id, channel_name) function to backend/services/channel_service.py with download_path=downloads/{channel_id}/ (IMPLEMENTED IN download_service.py using existing channel_service functions)
 - [x] T047 [US2] Create backend/services/download_service.py with check_if_downloaded(video_id), check_in_progress(video_id), enqueue_download(channel_id, video_id, video_url) logic
-- [ ] T048 [US2] Create backend/tasks/download_tasks.py with Huey task @huey.task: download_video(task_id) using yt-dlp Python library
-- [ ] T049 [US2] Add yt-dlp progress hook in backend/tasks/download_tasks.py to update DownloadTask.progress_percent and status in database
-- [ ] T050 [US2] Implement retry logic in backend/tasks/download_tasks.py: max 3 retries with exponential backoff (60s, 120s, 240s)
-- [ ] T051 [US2] Add file path logic in backend/tasks/download_tasks.py: save to channel's download_path directory (downloads/{channel_id}/{video_id}.mp4)
-- [ ] T052 [US2] Create DownloadHistory record in backend/tasks/download_tasks.py on completion with full video metadata (title, duration, file_path, file_size, success, error_code)
+- [X] T048 [US2] Create backend/tasks/download_tasks.py with Huey task @huey.task: download_video(task_id) using yt-dlp Python library
+- [X] T049 [US2] Add yt-dlp progress hook in backend/tasks/download_tasks.py to update DownloadTask.progress_percent and status in database
+- [X] T050 [US2] Implement retry logic in backend/tasks/download_tasks.py: max 3 retries with exponential backoff (60s, 120s, 240s)
+- [X] T051 [US2] Add file path logic in backend/tasks/download_tasks.py: save to channel's download_path directory (downloads/{channel_id}/{video_id}.mp4)
+- [X] T052 [US2] Create DownloadHistory record in backend/tasks/download_tasks.py on completion with full video metadata (title, duration, file_path, file_size, success, error_code)
 - [x] T053 [US2] Create backend/routers/downloads.py with POST /api/downloads endpoint (accepts video_id + channel_id, checks duplicates, enqueues task, returns 202 with task_id)
 - [ ] T054 [US2] Add POST /api/downloads/batch endpoint to backend/routers/downloads.py (accepts array of video_ids with channel_ids, enqueues multiple tasks) (SKIPPED - batch-urls is more user-friendly)
 - [x] T055 [US2] Add POST /api/downloads/batch-urls endpoint to backend/routers/downloads.py (accepts video_urls array, extracts video_id, fetches metadata, auto-creates channels, checks duplicates, enqueues tasks)

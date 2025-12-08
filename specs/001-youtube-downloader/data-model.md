@@ -273,13 +273,13 @@ SessionLocal = sessionmaker(bind=engine)
 class Channel(Base):
     __tablename__ = 'channels'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    channel_id = Column(String(255), unique=True, nullable=False, index=True)
-    name = Column(String(500), nullable=False)
-    url = Column(String(1000), nullable=False)
-    download_path = Column(String(2000), nullable=False)
-    date_added = Column(DateTime, nullable=False, default=datetime.utcnow)
-    last_updated = Column(DateTime, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    channel_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(500), nullable=False)
+    url: Mapped[str] = mapped_column(String(1000), nullable=False)
+    download_path: Mapped[str] = mapped_column(String(2000), nullable=False)
+    date_added: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    last_updated: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     download_tasks = relationship("DownloadTask", back_populates="channel", cascade="all, delete-orphan")
     download_history = relationship("DownloadHistory", back_populates="channel", cascade="all, delete-orphan")
@@ -288,18 +288,18 @@ class Channel(Base):
 class DownloadTask(Base):
     __tablename__ = 'download_tasks'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    task_id = Column(String(36), unique=True, nullable=False, index=True)
-    channel_id = Column(Integer, ForeignKey('channels.id', ondelete='CASCADE'), nullable=False, index=True)
-    video_id = Column(String(11), nullable=False, index=True)
-    video_url = Column(String(1000), nullable=False)
-    status = Column(String(20), nullable=False, index=True)
-    progress_percent = Column(Integer, default=0)
-    error_message = Column(Text, nullable=True)
-    retry_count = Column(Integer, default=0)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    started_at = Column(DateTime, nullable=True)
-    completed_at = Column(DateTime, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    task_id: Mapped[str] = mapped_column(String(36), unique=True, nullable=False, index=True)
+    channel_id: Mapped[int] = mapped_column(Integer, ForeignKey('channels.id', ondelete='CASCADE'), nullable=False, index=True)
+    video_id: Mapped[str] = mapped_column(String(11), nullable=False, index=True)
+    video_url: Mapped[str] = mapped_column(String(1000), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    progress_percent: Mapped[int] = mapped_column(Integer, default=0)
+    error_message: Mapped[str] = mapped_column(Text, nullable=True)
+    retry_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    started_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     channel = relationship("Channel", back_populates="download_tasks")
 
@@ -313,21 +313,21 @@ class DownloadTask(Base):
 class DownloadHistory(Base):
     __tablename__ = 'download_history'
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    channel_id = Column(Integer, ForeignKey('channels.id', ondelete='CASCADE'), nullable=False, index=True)
-    video_id = Column(String(11), nullable=False, index=True)
-    video_title = Column(String(500), nullable=False)
-    video_url = Column(String(1000), nullable=False)
-    task_id = Column(String(36), nullable=True, index=True)
-    download_date = Column(DateTime, nullable=False, default=datetime.utcnow, index=True)
-    upload_date = Column(DateTime, nullable=True)
-    duration = Column(Integer, nullable=True)
-    file_path = Column(String(2000), nullable=True)
-    file_size = Column(BigInteger, nullable=True)
-    metadata = Column(Text, nullable=True)  # JSON string
-    download_duration_seconds = Column(Integer, nullable=False)
-    success = Column(Boolean, nullable=False)
-    error_code = Column(String(50), nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    channel_id: Mapped[int] = mapped_column(Integer, ForeignKey('channels.id', ondelete='CASCADE'), nullable=False, index=True)
+    video_id: Mapped[str] = mapped_column(String(11), nullable=False, index=True)
+    video_title: Mapped[str] = mapped_column(String(500), nullable=False)
+    video_url: Mapped[str] = mapped_column(String(1000), nullable=False)
+    task_id: Mapped[str] = mapped_column(String(36), nullable=True, index=True)
+    download_date: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    upload_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    duration: Mapped[int] = mapped_column(Integer, nullable=True)
+    file_path: Mapped[str] = mapped_column(String(2000), nullable=True)
+    file_size: Mapped[int] = mapped_column(BigInteger, nullable=True)
+    metadata: Mapped[str] = mapped_column(Text, nullable=True)  # JSON string
+    download_duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
+    success: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    error_code: Mapped[str] = mapped_column(String(50), nullable=True)
 
     channel = relationship("Channel", back_populates="download_history")
 ```

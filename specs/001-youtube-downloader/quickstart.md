@@ -272,15 +272,28 @@ export async function apiFetch<T>(
 
 ### Development Mode
 
-**Terminal 1: Backend**
+**Terminal 1: Backend API Server**
 
 ```bash
 cd backend
 source venv/bin/activate  # Windows: venv\Scripts\activate
-python main.py
+python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-**Terminal 2: Frontend**
+**Terminal 2: Huey Task Consumer** (Required for downloads to execute)
+
+```bash
+cd backend
+source venv/bin/activate  # Windows: venv\Scripts\activate
+python -m huey.consumer main.huey
+```
+
+The Huey consumer processes background download tasks. Without it running:
+- Videos can be queued via the Downloads page
+- Tasks will be created in the database
+- But actual downloads won't execute until the consumer starts
+
+**Terminal 3: Frontend Dev Server**
 
 ```bash
 cd web
@@ -341,28 +354,47 @@ VITE_API_BASE=https://api.yourdomain.com
 
 ## Testing the Application
 
-### 1. Add a Channel
+### 1. Add a Channel (Optional - Auto-created during download)
 
 1. Open `http://localhost:5173`
-2. Click "Add Channel"
-3. Enter: `https://www.youtube.com/@example`
-4. Click "Submit"
+2. Navigate to "Channels" page
+3. Enter YouTube channel URL: `https://www.youtube.com/@channelname`
+4. Click "Add Channel"
 5. Channel should appear in list
 
-### 2. Request a Download
+**Note**: Channels are automatically created when you download videos, so this step is optional.
 
-1. Click on a channel
-2. Click "Fetch Videos" to list available videos
-3. Click "Download" on a video
-4. Navigate to "Queue" tab
-5. See task status change: pending → downloading → completed
+### 2. Request Batch Downloads
 
-### 3. View Download History
+1. Navigate to "Downloads" page (`http://localhost:5173/downloads`)
+2. Paste YouTube video URLs (one per line) in the textarea, for example:
+   ```
+   https://www.youtube.com/watch?v=dQw4w9WgXcQ
+   https://youtu.be/jNQXAC9IVRw
+   https://www.youtube.com/watch?v=9bZkp7q19f0
+   ```
+3. Click "Download All"
+4. See results:
+   - Summary: X requested, Y queued, Z skipped
+   - Task list with video IDs and status badges
+   - Any errors or skipped videos
 
-1. Navigate to "History" tab
-2. See completed downloads
-3. Try search filter
-4. Try date range filter
+**Important**: Make sure the Huey consumer is running (Terminal 2) for downloads to actually execute!
+
+### 3. Monitor Download Progress (Queue Page - Coming Soon)
+
+**Note**: Queue monitoring page is not yet implemented. Current progress:
+- Tasks are created and queued successfully
+- Downloads execute in background via Huey
+- Can verify downloads by checking database or file system
+
+To check download status manually:
+```bash
+# Check database
+cd backend
+source venv/bin/activate  # Windows: venv\Scripts\activate
+python -c "from src.models.database import SessionLocal; from src.repository import download_repo; db = SessionLocal(); tasks = download_repo.get_all_active_tasks(db); print(f'Active tasks: {len(tasks)}'); [print(f'- {t.video_id}: {t.status} ({t.progress_percent}%)') for t in tasks]"
+```
 
 ### 4. Check Downloaded Files
 
@@ -371,8 +403,12 @@ VITE_API_BASE=https://api.yourdomain.com
 ls -lh downloads/
 
 # Should see structure like:
-# downloads/dQ/dQw4w9WgXcQ/dQw4w9WgXcQ-video-title.mp4
+# downloads/UC_channel_id/video_id.mp4
 ```
+
+### 5. View Download History (Coming Soon)
+
+**Note**: History page is not yet implemented. History records are being created in the database during downloads.
 
 ---
 

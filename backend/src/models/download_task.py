@@ -1,7 +1,10 @@
 """DownloadTask model for tracking download operations."""
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Index
+from datetime import datetime
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.sql import func
+
 from .database import Base
 
 
@@ -10,19 +13,18 @@ class DownloadTask(Base):
 
     __tablename__ = "download_tasks"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    task_id = Column(String(36), unique=True, nullable=False, index=True)
-    channel_id = Column(Integer, ForeignKey("channels.id", ondelete="CASCADE"), nullable=False, index=True)
-    video_id = Column(String(11), nullable=False, index=True)
-    video_url = Column(String(1000), nullable=False)
-    status = Column(String(20), nullable=False, index=True)  # pending, downloading, completed, failed
-    progress_percent = Column(Integer, default=0)
-    error_message = Column(String, nullable=True)
-    retry_count = Column(Integer, default=0)
-    created_at = Column(DateTime, nullable=False, server_default=func.now())
-    started_at = Column(DateTime, nullable=True)
-    completed_at = Column(DateTime, nullable=True)
-
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    task_id: Mapped[str] = mapped_column(String(36), unique=True, nullable=False, index=True)
+    channel_id: Mapped[int] = mapped_column(Integer, ForeignKey("channels.id", ondelete="CASCADE"), nullable=False, index=True)
+    video_id: Mapped[str] = mapped_column(String(11), nullable=False, index=True)
+    video_url: Mapped[str] = mapped_column(String(1000), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)  # pending, downloading, completed, failed
+    progress_percent: Mapped[int] = mapped_column(Integer, default=0)
+    error_message: Mapped[str] = mapped_column(String, nullable=True)
+    retry_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
+    started_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    completed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     __table_args__ = (
         Index("ix_task_status_created", "status", "created_at"),
         Index("ix_task_channel_video", "channel_id", "video_id"),
