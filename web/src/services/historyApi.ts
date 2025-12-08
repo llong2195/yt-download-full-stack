@@ -19,7 +19,7 @@ export interface HistoryFilters {
  */
 export async function fetchHistory(filters: HistoryFilters = {}): Promise<HistoryListResponse> {
   const params = new URLSearchParams();
-  
+
   if (filters.search) params.append('search', filters.search);
   if (filters.date_from) params.append('date_from', filters.date_from);
   if (filters.date_to) params.append('date_to', filters.date_to);
@@ -29,7 +29,7 @@ export async function fetchHistory(filters: HistoryFilters = {}): Promise<Histor
 
   const queryString = params.toString();
   const url = queryString ? `/api/history?${queryString}` : '/api/history';
-  
+
   return fetchApi<HistoryListResponse>(url, {
     method: 'GET',
   });

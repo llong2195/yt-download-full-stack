@@ -14,9 +14,9 @@ import type {
   HistoryStatsResponse,
 } from "../types/download";
 
-const DOWNLOADS_BASE = "/api/downloads";
-const QUEUE_BASE = "/api/queue";
-const HISTORY_BASE = "/api/history";
+const DOWNLOADS_BASE = "/downloads";
+const QUEUE_BASE = "/queue";
+const HISTORY_BASE = "/history";
 
 // ============================================================================
 // Download Endpoints
