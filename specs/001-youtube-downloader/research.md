@@ -353,7 +353,7 @@ interface APIError {
 ```python
 class DownloadException(Exception):
     def __init__(self, error_code: str, user_message: str,
-                 technical_details: str = None, retry_possible: bool = False):
+                 technical_details: str | None = None, retry_possible: bool = False):
         self.error_code = error_code
         self.user_message = user_message
         self.technical_details = technical_details

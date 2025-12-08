@@ -20,4 +20,23 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    // Enable code splitting for better caching
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router'],
+          'ui-vendor': ['lucide-react'],
+        },
+      },
+    },
+    // Minification
+    minify: 'esbuild',
+    // Set chunk size warning limit (1MB)
+    chunkSizeWarningLimit: 1000,
+    // Generate sourcemaps for production debugging (set to true if needed)
+    sourcemap: false,
+    // Target modern browsers
+    target: 'esnext',
+  },
 });

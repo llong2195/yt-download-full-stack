@@ -1,14 +1,45 @@
 """Download service with business logic for video downloads."""
 
 import uuid
+import shutil
 from typing import List, Dict
 from sqlalchemy.orm import Session
 
 from src.repository import channel_repo, download_repo
 from src.services import youtube_service, channel_service
 from src.utils.logger import get_logger
+from src.utils.error_handlers import DiskSpaceException
+from src.utils.config import settings
 
 logger = get_logger(__name__)
+
+# Minimum required disk space: 1GB
+MIN_DISK_SPACE_BYTES = 1 * 1024 * 1024 * 1024
+
+
+def check_disk_space() -> tuple[int, int]:
+    """Check available disk space.
+    
+    Returns:
+        Tuple of (total_bytes, available_bytes)
+        
+    Raises:
+        DiskSpaceException: If available space is less than 1GB
+    """
+    try:
+        stat = shutil.disk_usage(settings.DOWNLOAD_DIR)
+        if stat.free < MIN_DISK_SPACE_BYTES:
+            raise DiskSpaceException(
+                required_space=MIN_DISK_SPACE_BYTES,
+                available_space=stat.free,
+            )
+        return stat.total, stat.free
+    except DiskSpaceException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to check disk space: {e}")
+        # Don't block downloads if we can't check disk space
+        return 0, 0
 
 
 class DownloadServiceError(Exception):
@@ -46,7 +77,11 @@ def request_download(
 
     Raises:
         DownloadServiceError: Various download-related errors
+        DiskSpaceException: If insufficient disk space
     """
+    # Check disk space before enqueueing
+    check_disk_space()
+    
     # Extract video metadata
     try:
         metadata = youtube_service.extract_video_metadata(video_url)
@@ -106,7 +141,13 @@ def request_batch_download_by_urls(
 
     Returns:
         Dict with batch operation results
+        
+    Raises:
+        DiskSpaceException: If insufficient disk space
     """
+    # Check disk space before processing batch
+    check_disk_space()
+    
     results = {
         "total_requested": len(video_urls),
         "total_created": 0,
