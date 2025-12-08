@@ -103,35 +103,35 @@
 
 ### Backend for User Story 2
 
-- [ ] T042 [P] [US2] Create backend/repository/video_repo.py with functions: get_videos_by_channel(), get_video_by_video_id(), create_video(), update_video_file_info()
-- [ ] T043 [P] [US2] Create backend/repository/download_repo.py with functions: create_task(), get_task_by_id(), update_task_status(), check_active_task_for_video()
-- [ ] T044 [US2] Create backend/services/youtube_service.py to extract video metadata using yt-dlp (without downloading): title, duration, upload_date
-- [ ] T045 [US2] Create backend/services/download_service.py with check_if_downloaded(video_id), enqueue_download(video_id) logic
-- [ ] T046 [US2] Create backend/tasks/download_tasks.py with Huey task @huey.task: download_video(video_id) using yt-dlp Python library
-- [ ] T047 [US2] Add yt-dlp progress hook in backend/tasks/download_tasks.py to update DownloadTask.progress_percent and status in database
-- [ ] T048 [US2] Implement retry logic in backend/tasks/download_tasks.py: max 3 retries with exponential backoff (60s, 120s, 240s)
-- [ ] T049 [US2] Add file path sanitization in backend/tasks/download_tasks.py: use UUID-based subdirectories (downloads/{video_id[:2]}/{video_id}/)
-- [ ] T050 [US2] Update Video.file_path and file_size in database when download completes in backend/tasks/download_tasks.py
-- [ ] T051 [US2] Create DownloadHistory record in backend/tasks/download_tasks.py on success or failure
-- [ ] T052 [US2] Create backend/routers/downloads.py with POST /api/downloads endpoint (accepts video_id, checks duplicates, enqueues task, returns 202 with task_id)
-- [ ] T053 [US2] Add POST /api/downloads/batch endpoint to backend/routers/downloads.py (accepts array of video_ids, enqueues multiple tasks)
-- [ ] T054 [US2] Add GET /api/channels/{channel_id}/videos endpoint to backend/routers/channels.py (returns videos with is_downloaded flag)
-- [ ] T055 [US2] Register downloads router in backend/main.py with prefix /api/downloads
-- [ ] T056 [US2] Add error handling for ALREADY_DOWNLOADED, DOWNLOAD_IN_PROGRESS, RATE_LIMIT errors in backend/services/download_service.py
+- [ ] T042 [P] [US2] Create backend/repository/download_repo.py with functions: create_task(), get_task_by_id(), update_task_status(), check_active_task_for_video(), check_if_downloaded(video_id)
+- [ ] T043 [P] [US2] Create backend/repository/history_repo.py with get_history_by_video_id() to check if video was previously downloaded
+- [ ] T044 [US2] Create backend/services/youtube_service.py with extract_video_metadata(url) using yt-dlp: returns video_id, title, duration, upload_date, channel_id, channel_name
+- [ ] T045 [US2] Add extract_video_id_from_url(url) function to backend/services/youtube_service.py supporting 3 URL patterns (youtube.com/watch, youtu.be, m.youtube.com)
+- [ ] T046 [US2] Add auto_create_channel(channel_id, channel_name) function to backend/services/channel_service.py with download_path=downloads/{channel_id}/
+- [ ] T047 [US2] Create backend/services/download_service.py with check_if_downloaded(video_id), check_in_progress(video_id), enqueue_download(channel_id, video_id, video_url) logic
+- [ ] T048 [US2] Create backend/tasks/download_tasks.py with Huey task @huey.task: download_video(task_id) using yt-dlp Python library
+- [ ] T049 [US2] Add yt-dlp progress hook in backend/tasks/download_tasks.py to update DownloadTask.progress_percent and status in database
+- [ ] T050 [US2] Implement retry logic in backend/tasks/download_tasks.py: max 3 retries with exponential backoff (60s, 120s, 240s)
+- [ ] T051 [US2] Add file path logic in backend/tasks/download_tasks.py: save to channel's download_path directory (downloads/{channel_id}/{video_id}.mp4)
+- [ ] T052 [US2] Create DownloadHistory record in backend/tasks/download_tasks.py on completion with full video metadata (title, duration, file_path, file_size, success, error_code)
+- [ ] T053 [US2] Create backend/routers/downloads.py with POST /api/downloads endpoint (accepts video_id + channel_id, checks duplicates, enqueues task, returns 202 with task_id)
+- [ ] T054 [US2] Add POST /api/downloads/batch endpoint to backend/routers/downloads.py (accepts array of video_ids with channel_ids, enqueues multiple tasks)
+- [ ] T055 [US2] Add POST /api/downloads/batch-urls endpoint to backend/routers/downloads.py (accepts video_urls array, extracts video_id, fetches metadata, auto-creates channels, checks duplicates, enqueues tasks)
+- [ ] T056 [US2] Register downloads router in backend/main.py with prefix /api/downloads
+- [ ] T057 [US2] Add error handling for ALREADY_DOWNLOADED, DOWNLOAD_IN_PROGRESS, VIDEO_UNAVAILABLE, METADATA_FETCH_FAILED, RATE_LIMIT_EXCEEDED in backend/services/download_service.py
 
 ### Frontend for User Story 2
 
-- [ ] T057 [P] [US2] Create web/src/types/video.ts with Video interface and metadata fields
-- [ ] T058 [P] [US2] Create web/src/types/download.ts with DownloadTask interface (task_id, status, progress_percent, etc.)
-- [ ] T059 [US2] Create web/src/services/downloadApi.ts with functions: requestDownload(video_id), requestBatchDownload(video_ids)
-- [ ] T060 [US2] Update web/src/services/channelApi.ts to add fetchChannelVideos(channel_id) function
-- [ ] T061 [P] [US2] Create web/src/components/VideoCard.tsx to display video info with download button (disabled if already downloaded)
-- [ ] T062 [US2] Create web/src/pages/Downloads.tsx with channel selector, video list, download button per video, and "Download All" button
-- [ ] T063 [US2] Add Downloads route in web/src/App.tsx using <Route path="/downloads" element={<Downloads />} />
-- [ ] T064 [US2] Add navigation menu in web/src/App.tsx using <Link> components from react-router for Channels, Downloads, Queue, History pages
-- [ ] T065 [US2] Show success toast notification in web/src/pages/Downloads.tsx when download is queued (task_id returned)
-- [ ] T066 [US2] Show error messages in web/src/pages/Downloads.tsx for duplicate downloads or failures
-- [ ] T067 [US2] Disable download button in web/src/components/VideoCard.tsx if video.is_downloaded === true
+- [ ] T058 [P] [US2] Create web/src/types/download.ts with DownloadTask interface (task_id, video_id, video_url, channel_id, status, progress_percent, etc.)
+- [ ] T059 [US2] Create web/src/services/downloadApi.ts with functions: requestDownload(video_id, channel_id), requestBatchDownload(video_ids), requestBatchDownloadByUrls(video_urls)
+- [ ] T060 [P] [US2] Create web/src/components/UrlInput.tsx with textarea for pasting multiple YouTube URLs (one per line) and "Download All" button
+- [ ] T061 [US2] Create web/src/pages/Downloads.tsx with URL input form, recent downloads list, and download status feedback
+- [ ] T062 [US2] Add Downloads route in web/src/App.tsx using <Route path="/downloads" element={<Downloads />} />
+- [ ] T063 [US2] Add navigation menu in web/src/App.tsx using <Link> components from react-router for Channels, Downloads, Queue, History pages
+- [ ] T064 [US2] Implement URL parsing in web/src/pages/Downloads.tsx: split textarea by newlines, validate URLs, call requestBatchDownloadByUrls()
+- [ ] T065 [US2] Show success toast notification in web/src/pages/Downloads.tsx with summary: X queued, Y skipped, Z channels created
+- [ ] T066 [US2] Show error messages in web/src/pages/Downloads.tsx for invalid URLs, failed metadata fetches, or rate limits
+- [ ] T067 [US2] Display skipped videos list in web/src/pages/Downloads.tsx showing reason (already downloaded, in progress) with download date
 
 **Checkpoint**: User Story 2 complete - downloads enqueue, API responds fast, tasks run in background
 
@@ -146,7 +146,7 @@
 ### Backend for User Story 3
 
 - [ ] T068 [P] [US3] Add get_active_tasks() function to backend/repository/download_repo.py (filters status IN ['pending', 'downloading'])
-- [ ] T069 [P] [US3] Add get_task_with_video_info() function to backend/repository/download_repo.py (JOIN with Video to get title)
+- [ ] T069 [P] [US3] Add get_task_with_channel_info() function to backend/repository/download_repo.py (JOIN with Channel to get channel name)
 - [ ] T070 [US3] Create backend/routers/queue.py with GET /api/queue/status endpoint (returns summary + list of active tasks with video info)
 - [ ] T071 [US3] Add GET /api/queue/tasks/{task_id} endpoint to backend/routers/queue.py (returns detailed task status)
 - [ ] T072 [US3] Add POST /api/queue/tasks/{task_id}/retry endpoint to backend/routers/queue.py (re-enqueues failed task if retry_count < 3)
@@ -178,7 +178,7 @@
 
 ### Backend for User Story 4
 
-- [ ] T085 [P] [US4] Create backend/repository/history_repo.py with get_history(search, date_from, date_to, success, limit, offset) function with JOINs to Video and Channel
+- [ ] T085 [P] [US4] Update backend/repository/history_repo.py with get_history(search, date_from, date_to, success, limit, offset) function with JOIN to Channel (video info already in DownloadHistory)
 - [ ] T086 [P] [US4] Add get_history_stats(period) function to backend/repository/history_repo.py for analytics (total, success rate, total size, avg time, most downloaded channel)
 - [ ] T087 [US4] Create backend/routers/history.py with GET /api/history endpoint supporting query params: search, date_from, date_to, success, limit, offset
 - [ ] T088 [US4] Add GET /api/history/stats endpoint to backend/routers/history.py with period query param (7d, 30d, 90d, all)
@@ -264,8 +264,8 @@
 - **Foundational utils**: T021, T022, T023 can run in parallel (different utility files)
 - **Within US1 backend**: T025 (repository) parallel with nothing, but T031 (error handling) after T026
 - **Within US1 frontend**: T032, T033, T035, T036 can run in parallel (different files)
-- **Within US2 backend**: T042, T043 can run in parallel (different repository files)
-- **Within US2 frontend**: T057, T058, T061 can run in parallel (different type/component files)
+- **Within US2 backend**: T042, T043, T044, T045 can run in parallel (different service/repository files)
+- **Within US2 frontend**: T058, T060 can run in parallel (different type/component files)
 - **Within US3 backend**: T068, T069 can run in parallel (different repository functions)
 - **Within US3 frontend**: T075, T076 can run in parallel (service and component)
 - **Within US4 backend**: T085, T086 can run in parallel (different repository functions)
@@ -358,8 +358,8 @@ With multiple developers:
 
 ✅ **Completeness**:
 
-- All 4 entities from data-model.md covered
-- All 19 API endpoints from contracts/api-spec.md covered
+- All 3 entities from data-model.md covered (Channel, DownloadTask, DownloadHistory)
+- All 14 API endpoints from contracts/api-spec.md covered (including new batch-urls)
 - All 8 research decisions from research.md incorporated
 - All layers (models, repository, services, routers, components, pages) included
 - Frontend and backend for each user story
@@ -410,6 +410,10 @@ With multiple developers:
 
 ## Notes
 
+- **Data Model**: Simplified to 3 tables (Channel, DownloadTask, DownloadHistory) - no separate Videos table
+- **Video Storage**: Each channel has its own download directory: `downloads/{channel_id}/`
+- **Video Metadata**: Stored in DownloadHistory table (video_title, video_url, duration, upload_date, metadata)
+- **New API**: POST /api/downloads/batch-urls accepts video URLs, auto-detects and creates channels
 - **Version Updates**: Tasks use actual package.json versions (React 19.2.0, react-router 7.10.1, TypeScript 5.9.3, Vite 7.2.4)
 - **Routing**: Uses react-router v7 API (BrowserRouter, Routes, Route, Link) not react-router-dom v6
 - No test tasks included (MVP does not require automated tests per research.md)
