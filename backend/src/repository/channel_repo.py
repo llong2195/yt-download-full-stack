@@ -117,7 +117,7 @@ def update_channel_metadata(
     if name is not None:
         channel.name = name
 
-    channel.last_updated = datetime.utcnow()
+    channel.last_updated = datetime.now()
 
     db.commit()
     db.refresh(channel)

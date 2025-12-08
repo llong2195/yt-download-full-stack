@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import and_, func
+from sqlalchemy import and_
 from sqlalchemy.orm import Session
 from src.models.download_history import DownloadHistory
 from src.models.download_task import DownloadTask
@@ -87,9 +87,9 @@ def update_task_status(
         task.error_message = error_message
 
     if status == "downloading" and not task.started_at:
-        task.started_at = datetime.utcnow()
+        task.started_at = datetime.now()
     elif status in ["completed", "failed"]:
-        task.completed_at = datetime.utcnow()
+        task.completed_at = datetime.now()
 
     db.commit()
     db.refresh(task)
@@ -189,7 +189,7 @@ def get_successful_download_for_video(
         .filter(
             and_(
                 DownloadHistory.video_id == video_id,
-                DownloadHistory.success == True,
+                DownloadHistory.success,
             )
         )
         .order_by(DownloadHistory.download_date.desc())

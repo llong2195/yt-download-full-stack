@@ -2,13 +2,11 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
 from src.models.database import get_db
 from src.models.schemas import (
     ChannelCreate,
-    ChannelResponse,
     ChannelListResponse,
-    ErrorResponse,
+    ChannelResponse,
 )
 from src.services import channel_service
 

@@ -278,7 +278,7 @@ class Channel(Base):
     name: Mapped[str] = mapped_column(String(500), nullable=False)
     url: Mapped[str] = mapped_column(String(1000), nullable=False)
     download_path: Mapped[str] = mapped_column(String(2000), nullable=False)
-    date_added: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    date_added: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now)
     last_updated: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     download_tasks = relationship("DownloadTask", back_populates="channel", cascade="all, delete-orphan")
@@ -297,7 +297,7 @@ class DownloadTask(Base):
     progress_percent: Mapped[int] = mapped_column(Integer, default=0)
     error_message: Mapped[str] = mapped_column(Text, nullable=True)
     retry_count: Mapped[int] = mapped_column(Integer, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now)
     started_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
@@ -319,7 +319,7 @@ class DownloadHistory(Base):
     video_title: Mapped[str] = mapped_column(String(500), nullable=False)
     video_url: Mapped[str] = mapped_column(String(1000), nullable=False)
     task_id: Mapped[str] = mapped_column(String(36), nullable=True, index=True)
-    download_date: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, index=True)
+    download_date: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=now, index=True)
     upload_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     duration: Mapped[int] = mapped_column(Integer, nullable=True)
     file_path: Mapped[str] = mapped_column(String(2000), nullable=True)

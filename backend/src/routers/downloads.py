@@ -1,5 +1,6 @@
 """Downloads API router."""
 
+from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -53,7 +54,7 @@ async def request_batch_download_by_urls(
                     progress_percent=0,
                     error_message=None,
                     retry_count=0,
-                    created_at=None,  # Will be populated from DB
+                    created_at=datetime.now(),  # Will be populated from DB
                     started_at=None,
                     completed_at=None,
                 )
