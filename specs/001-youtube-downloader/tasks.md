@@ -1,0 +1,415 @@
+# Tasks: YouTube Downloader Full-Stack Application
+
+**Input**: Design documents from `/specs/001-youtube-downloader/`  
+**Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/api-spec.md
+
+**Tests**: MVP does not require tests. Focus on implementation and manual validation using quickstart.md scenarios.
+
+**Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
+
+## Format: `- [ ] [ID] [P?] [Story?] Description`
+
+- **[P]**: Can run in parallel (different files, no dependencies)
+- **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3, US4)
+- Include exact file paths in descriptions
+
+## Path Conventions
+
+- **Web app**: `backend/` and `web/` at repository root
+- Paths shown below use web app structure per plan.md
+
+---
+
+## Phase 1: Setup (Shared Infrastructure)
+
+**Purpose**: Project initialization and basic structure
+
+- [ ] T001 Create backend directory structure: backend/models, backend/repository, backend/services, backend/routers, backend/tasks, backend/utils
+- [ ] T002 Create web directory structure: web/src/components, web/src/pages, web/src/services, web/src/types, web/src/utils
+- [ ] T003 Create backend/requirements.txt with dependencies: fastapi==0.104.1, uvicorn[standard]==0.24.0, sqlalchemy==2.0.23, pydantic==2.5.0, huey==2.5.0, yt-dlp==2023.11.16, python-multipart==0.0.6
+- [ ] T004 [P] Initialize Python virtual environment and install backend dependencies: python -m venv backend/venv && pip install -r backend/requirements.txt
+- [ ] T005 [P] Initialize web/package.json with dependencies: react@18.2.0, react-dom@18.2.0, react-router-dom@6.20.0, typescript@5.3.3, vite@5.0.8, vitest@1.0.4
+- [ ] T006 [P] Install web dependencies: cd web && pnpm install
+- [ ] T007 Create data/ and downloads/ directories at repository root for SQLite database and video storage
+- [ ] T008 [P] Create web/vite.config.ts with proxy configuration for /api to http://localhost:8000
+- [ ] T009 [P] Create web/tsconfig.json with strict mode enabled and path aliases
+- [ ] T010 [P] Create backend/.env template file with DATABASE_URL, HUEY_DB, DOWNLOAD_DIR, API_PORT, CORS_ORIGINS
+
+---
+
+## Phase 2: Foundational (Blocking Prerequisites)
+
+**Purpose**: Core infrastructure that MUST be complete before ANY user story can be implemented
+
+**⚠️ CRITICAL**: No user story work can begin until this phase is complete
+
+- [ ] T011 Create backend/models/database.py with SQLAlchemy engine, Base, SessionLocal, WAL mode config
+- [ ] T012 [P] Create backend/models/__init__.py to export Base and session management
+- [ ] T013 [P] Create backend/models/channel.py with Channel SQLAlchemy model (id, channel_id, name, url, date_added, last_updated)
+- [ ] T014 [P] Create backend/models/video.py with Video SQLAlchemy model (id, video_id, channel_id FK, title, url, upload_date, duration, file_path, file_size, metadata, date_added)
+- [ ] T015 [P] Create backend/models/download_task.py with DownloadTask SQLAlchemy model (id, task_id, video_id FK, status, progress_percent, error_message, retry_count, created_at, started_at, completed_at)
+- [ ] T016 [P] Create backend/models/download_history.py with DownloadHistory SQLAlchemy model (id, video_id FK, task_id, download_date, file_size, download_duration_seconds, success, error_code)
+- [ ] T017 Create backend/models/schemas.py with Pydantic request/response models for all entities
+- [ ] T018 Initialize database by running Base.metadata.create_all(engine) - creates all tables with indexes and constraints
+- [ ] T019 Create backend/main.py with FastAPI app, CORS middleware for http://localhost:5173 and chrome-extension://*
+- [ ] T020 Configure Huey in backend/main.py: SqliteHuey(filename='data/huey.db') with consumer thread in lifespan event
+- [ ] T021 [P] Create backend/utils/logger.py for structured logging configuration
+- [ ] T022 [P] Create backend/utils/validators.py with URL validation and path sanitization functions
+- [ ] T023 [P] Create backend/utils/config.py to load environment variables from .env file
+- [ ] T024 Add health check endpoint GET /api/health in backend/main.py returning status, version, dependencies
+
+**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
+
+---
+
+## Phase 3: User Story 1 - Channel Management (Priority: P1) 🎯 MVP
+
+**Goal**: Users can add, view, and remove YouTube channels. Data persists across sessions.
+
+**Independent Test**: Add a channel via web UI, view list, close browser, reopen, verify channel still there.
+
+### Backend for User Story 1
+
+- [ ] T025 [P] [US1] Create backend/repository/channel_repo.py with CRUD functions: get_all_channels(), get_channel_by_id(), create_channel(), delete_channel()
+- [ ] T026 [US1] Create backend/services/channel_service.py with business logic: validate channel URL, extract channel info using yt-dlp, check for duplicates
+- [ ] T027 [US1] Create backend/routers/channels.py with GET /api/channels endpoint (returns all channels with video count)
+- [ ] T028 [US1] Add POST /api/channels endpoint to backend/routers/channels.py (validates URL, extracts metadata, saves to DB)
+- [ ] T029 [US1] Add DELETE /api/channels/{channel_id} endpoint to backend/routers/channels.py (cascade deletes videos)
+- [ ] T030 [US1] Register channels router in backend/main.py with prefix /api/channels
+- [ ] T031 [US1] Add error handling in backend/services/channel_service.py for invalid URLs, duplicate channels, YouTube API errors
+
+### Frontend for User Story 1
+
+- [ ] T032 [P] [US1] Create web/src/types/channel.ts with Channel and API response interfaces
+- [ ] T033 [P] [US1] Create web/src/services/api.ts with base fetch wrapper function and error handling
+- [ ] T034 [US1] Create web/src/services/channelApi.ts with functions: fetchChannels(), addChannel(url), deleteChannel(id)
+- [ ] T035 [P] [US1] Create web/src/components/ChannelCard.tsx to display channel info (name, URL, date added, video count, delete button)
+- [ ] T036 [P] [US1] Create web/src/components/ChannelList.tsx to render list of ChannelCard components
+- [ ] T037 [US1] Create web/src/pages/Channels.tsx with add channel form, channel list, and state management
+- [ ] T038 [US1] Add routing in web/src/App.tsx with react-router-dom: / → Channels page
+- [ ] T039 [US1] Create web/src/main.tsx as React entry point with StrictMode and Router
+- [ ] T040 [US1] Add loading states and error messages in web/src/pages/Channels.tsx for add/delete operations
+- [ ] T041 [US1] Style web/src/pages/Channels.tsx with basic CSS for layout and form (or use Shadcn Button, Input components)
+
+**Checkpoint**: User Story 1 complete - users can manage channels, persist data, independently testable
+
+---
+
+## Phase 4: User Story 2 - Video Download Initiation (Priority: P2)
+
+**Goal**: Users request video downloads. System checks for duplicates, enqueues to Huey, returns immediately with task status.
+
+**Independent Test**: Add channel (US1), request download, verify API responds <200ms with task_id and "pending" status.
+
+### Backend for User Story 2
+
+- [ ] T042 [P] [US2] Create backend/repository/video_repo.py with functions: get_videos_by_channel(), get_video_by_video_id(), create_video(), update_video_file_info()
+- [ ] T043 [P] [US2] Create backend/repository/download_repo.py with functions: create_task(), get_task_by_id(), update_task_status(), check_active_task_for_video()
+- [ ] T044 [US2] Create backend/services/youtube_service.py to extract video metadata using yt-dlp (without downloading): title, duration, upload_date
+- [ ] T045 [US2] Create backend/services/download_service.py with check_if_downloaded(video_id), enqueue_download(video_id) logic
+- [ ] T046 [US2] Create backend/tasks/download_tasks.py with Huey task @huey.task: download_video(video_id) using yt-dlp Python library
+- [ ] T047 [US2] Add yt-dlp progress hook in backend/tasks/download_tasks.py to update DownloadTask.progress_percent and status in database
+- [ ] T048 [US2] Implement retry logic in backend/tasks/download_tasks.py: max 3 retries with exponential backoff (60s, 120s, 240s)
+- [ ] T049 [US2] Add file path sanitization in backend/tasks/download_tasks.py: use UUID-based subdirectories (downloads/{video_id[:2]}/{video_id}/)
+- [ ] T050 [US2] Update Video.file_path and file_size in database when download completes in backend/tasks/download_tasks.py
+- [ ] T051 [US2] Create DownloadHistory record in backend/tasks/download_tasks.py on success or failure
+- [ ] T052 [US2] Create backend/routers/downloads.py with POST /api/downloads endpoint (accepts video_id, checks duplicates, enqueues task, returns 202 with task_id)
+- [ ] T053 [US2] Add POST /api/downloads/batch endpoint to backend/routers/downloads.py (accepts array of video_ids, enqueues multiple tasks)
+- [ ] T054 [US2] Add GET /api/channels/{channel_id}/videos endpoint to backend/routers/channels.py (returns videos with is_downloaded flag)
+- [ ] T055 [US2] Register downloads router in backend/main.py with prefix /api/downloads
+- [ ] T056 [US2] Add error handling for ALREADY_DOWNLOADED, DOWNLOAD_IN_PROGRESS, RATE_LIMIT errors in backend/services/download_service.py
+
+### Frontend for User Story 2
+
+- [ ] T057 [P] [US2] Create web/src/types/video.ts with Video interface and metadata fields
+- [ ] T058 [P] [US2] Create web/src/types/download.ts with DownloadTask interface (task_id, status, progress_percent, etc.)
+- [ ] T059 [US2] Create web/src/services/downloadApi.ts with functions: requestDownload(video_id), requestBatchDownload(video_ids)
+- [ ] T060 [US2] Update web/src/services/channelApi.ts to add fetchChannelVideos(channel_id) function
+- [ ] T061 [P] [US2] Create web/src/components/VideoCard.tsx to display video info with download button (disabled if already downloaded)
+- [ ] T062 [US2] Create web/src/pages/Downloads.tsx with channel selector, video list, download button per video, and "Download All" button
+- [ ] T063 [US2] Add Downloads route in web/src/App.tsx: /downloads → Downloads page
+- [ ] T064 [US2] Add navigation menu in web/src/App.tsx with links to Channels, Downloads, Queue, History pages
+- [ ] T065 [US2] Show success toast notification in web/src/pages/Downloads.tsx when download is queued (task_id returned)
+- [ ] T066 [US2] Show error messages in web/src/pages/Downloads.tsx for duplicate downloads or failures
+- [ ] T067 [US2] Disable download button in web/src/components/VideoCard.tsx if video.is_downloaded === true
+
+**Checkpoint**: User Story 2 complete - downloads enqueue, API responds fast, tasks run in background
+
+---
+
+## Phase 5: User Story 3 - Download Status Monitoring (Priority: P3)
+
+**Goal**: Users view real-time download queue with status (pending/downloading/completed/failed), progress percentage, and error messages.
+
+**Independent Test**: Queue downloads (US2), navigate to Queue page, see status transition from pending → downloading → completed.
+
+### Backend for User Story 3
+
+- [ ] T068 [P] [US3] Add get_active_tasks() function to backend/repository/download_repo.py (filters status IN ['pending', 'downloading'])
+- [ ] T069 [P] [US3] Add get_task_with_video_info() function to backend/repository/download_repo.py (JOIN with Video to get title)
+- [ ] T070 [US3] Create backend/routers/queue.py with GET /api/queue/status endpoint (returns summary + list of active tasks with video info)
+- [ ] T071 [US3] Add GET /api/queue/tasks/{task_id} endpoint to backend/routers/queue.py (returns detailed task status)
+- [ ] T072 [US3] Add POST /api/queue/tasks/{task_id}/retry endpoint to backend/routers/queue.py (re-enqueues failed task if retry_count < 3)
+- [ ] T073 [US3] Register queue router in backend/main.py with prefix /api/queue
+- [ ] T074 [US3] Add error handling in backend/routers/queue.py for CANNOT_RETRY (task not failed) and MAX_RETRIES_EXCEEDED
+
+### Frontend for User Story 3
+
+- [ ] T075 [P] [US3] Create web/src/services/queueApi.ts with functions: fetchQueueStatus(), fetchTaskStatus(task_id), retryTask(task_id)
+- [ ] T076 [P] [US3] Create web/src/components/QueueItem.tsx to display task info (video title, status badge, progress bar, error message, retry button if failed)
+- [ ] T077 [US3] Create web/src/pages/Queue.tsx with queue summary stats (pending, downloading, completed_today, failed_today) and task list
+- [ ] T078 [US3] Add Queue route in web/src/App.tsx: /queue → Queue page
+- [ ] T079 [US3] Implement polling in web/src/pages/Queue.tsx: useEffect with setInterval every 2500ms to fetch queue status
+- [ ] T080 [US3] Show progress bar in web/src/components/QueueItem.tsx for tasks with status=downloading (0-100%)
+- [ ] T081 [US3] Add retry button in web/src/components/QueueItem.tsx for failed tasks (calls retryTask API)
+- [ ] T082 [US3] Show "last updated" timestamp in web/src/pages/Queue.tsx to indicate freshness of data
+- [ ] T083 [US3] Add color-coded status badges in web/src/components/QueueItem.tsx: pending=yellow, downloading=blue, completed=green, failed=red
+- [ ] T084 [US3] Stop polling when user leaves Queue page (cleanup in useEffect return function)
+
+**Checkpoint**: User Story 3 complete - queue visibility, real-time updates via polling, retry capability
+
+---
+
+## Phase 6: User Story 4 - Download History & Search (Priority: P4)
+
+**Goal**: Users browse complete download history with search by title/channel, filter by date range, and view detailed metadata.
+
+**Independent Test**: Complete several downloads (US2+US3), navigate to History page, search for specific video, apply date filter.
+
+### Backend for User Story 4
+
+- [ ] T085 [P] [US4] Create backend/repository/history_repo.py with get_history(search, date_from, date_to, success, limit, offset) function with JOINs to Video and Channel
+- [ ] T086 [P] [US4] Add get_history_stats(period) function to backend/repository/history_repo.py for analytics (total, success rate, total size, avg time, most downloaded channel)
+- [ ] T087 [US4] Create backend/routers/history.py with GET /api/history endpoint supporting query params: search, date_from, date_to, success, limit, offset
+- [ ] T088 [US4] Add GET /api/history/stats endpoint to backend/routers/history.py with period query param (7d, 30d, 90d, all)
+- [ ] T089 [US4] Register history router in backend/main.py with prefix /api/history
+- [ ] T090 [US4] Add pagination metadata to GET /api/history response: total, limit, offset, filters_applied
+
+### Frontend for User Story 4
+
+- [ ] T091 [P] [US4] Create web/src/types/history.ts with DownloadHistory interface
+- [ ] T092 [P] [US4] Create web/src/services/historyApi.ts with functions: fetchHistory(filters), fetchHistoryStats(period)
+- [ ] T093 [P] [US4] Create web/src/components/HistoryItem.tsx to display history record (video title, channel, date, file size, duration, success badge)
+- [ ] T094 [US4] Create web/src/pages/History.tsx with search input, date range filters, success filter checkbox, and history list
+- [ ] T095 [US4] Add History route in web/src/App.tsx: /history → History page
+- [ ] T096 [US4] Implement search functionality in web/src/pages/History.tsx: debounced input calling fetchHistory with search param
+- [ ] T097 [US4] Add date range pickers in web/src/pages/History.tsx (date_from, date_to inputs) that trigger fetchHistory
+- [ ] T098 [US4] Implement pagination in web/src/pages/History.tsx with "Load More" button or infinite scroll
+- [ ] T099 [US4] Show history stats summary at top of web/src/pages/History.tsx: total downloads, success rate, total size
+- [ ] T100 [US4] Add filtering by success/failure in web/src/pages/History.tsx with checkbox or toggle
+- [ ] T101 [P] [US4] Create web/src/utils/formatters.ts with functions: formatFileSize(bytes), formatDuration(seconds), formatDate(iso_string)
+- [ ] T102 [US4] Use formatters in web/src/components/HistoryItem.tsx to display human-readable file sizes and dates
+
+**Checkpoint**: User Story 4 complete - full history browsing, search, filters, all 4 user stories implemented
+
+---
+
+## Phase 7: Polish & Cross-Cutting Concerns
+
+**Purpose**: Improvements that affect multiple user stories or enhance overall quality
+
+- [ ] T103 [P] Add indexes verification script in backend/models/database.py to ensure all indexes from data-model.md are created
+- [ ] T104 [P] Create backend/utils/error_handlers.py with custom exception classes: DownloadException, ValidationException, NotFoundException
+- [ ] T105 Add global exception handler in backend/main.py to catch all exceptions and return structured error responses with error_code, user_message, technical_details
+- [ ] T106 [P] Add disk space check in backend/services/download_service.py before enqueueing download (reject if <1GB free)
+- [ ] T107 [P] Add request logging middleware in backend/main.py to log all API requests with timestamp, method, path, status, duration
+- [ ] T108 [P] Create web/src/index.css with global styles and CSS variables for consistent theming
+- [ ] T109 [P] Add loading spinner component in web/src/components/LoadingSpinner.tsx used across all pages
+- [ ] T110 [P] Add error boundary component in web/src/components/ErrorBoundary.tsx to catch React errors
+- [ ] T111 Wrap App in ErrorBoundary in web/src/main.tsx
+- [ ] T112 [P] Add toast notification system in web/src/components/Toast.tsx for success/error messages
+- [ ] T113 Add README.md at repository root with project overview, setup instructions (link to quickstart.md), and architecture diagram
+- [ ] T114 [P] Add .gitignore at repository root: venv/, node_modules/, dist/, data/, downloads/, *.db, .env
+- [ ] T115 Validate all endpoints against contracts/api-spec.md: verify request/response schemas match
+- [ ] T116 Validate database schema against data-model.md: verify all indexes, constraints, foreign keys exist
+- [ ] T117 Run through quickstart.md manual test scenarios for all 4 user stories to verify independent testability
+- [ ] T118 [P] Add environment variable documentation in backend/.env.example with comments explaining each variable
+- [ ] T119 [P] Add TypeScript type validation: run tsc --noEmit in web/ to check for type errors
+- [ ] T120 [P] Optimize web build in web/vite.config.ts: enable code splitting, minification, compression
+
+---
+
+## Dependencies & Execution Order
+
+### Phase Dependencies
+
+- **Setup (Phase 1)**: No dependencies - can start immediately
+- **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
+- **User Story 1 (Phase 3)**: Depends on Foundational phase - MVP foundation
+- **User Story 2 (Phase 4)**: Depends on User Story 1 (needs Channel entity and UI)
+- **User Story 3 (Phase 5)**: Depends on User Story 2 (needs DownloadTask entity and enqueue logic)
+- **User Story 4 (Phase 6)**: Depends on User Story 2 (needs DownloadHistory created by tasks)
+- **Polish (Phase 7)**: Depends on all user stories being complete
+
+### User Story Dependencies
+
+- **User Story 1 (P1)**: Can start after Foundational (Phase 2) - No dependencies on other stories ✅ MVP
+- **User Story 2 (P2)**: Requires User Story 1 (channels must exist to have videos)
+- **User Story 3 (P3)**: Requires User Story 2 (tasks must be enqueued to monitor queue)
+- **User Story 4 (P4)**: Requires User Story 2 (history records created by download tasks)
+
+### Within Each User Story
+
+- Backend models/repositories before services
+- Services before routers
+- Routers before frontend API services
+- Frontend API services before components
+- Components before pages
+- Pages before routing
+
+### Parallel Opportunities
+
+- **Setup tasks**: T004, T005, T006, T008, T009, T010 can all run in parallel (different directories)
+- **Foundational models**: T013, T014, T015, T016 can run in parallel (different model files)
+- **Foundational utils**: T021, T022, T023 can run in parallel (different utility files)
+- **Within US1 backend**: T025 (repository) parallel with nothing, but T031 (error handling) after T026
+- **Within US1 frontend**: T032, T033, T035, T036 can run in parallel (different files)
+- **Within US2 backend**: T042, T043 can run in parallel (different repository files)
+- **Within US2 frontend**: T057, T058, T061 can run in parallel (different type/component files)
+- **Within US3 backend**: T068, T069 can run in parallel (different repository functions)
+- **Within US3 frontend**: T075, T076 can run in parallel (service and component)
+- **Within US4 backend**: T085, T086 can run in parallel (different repository functions)
+- **Within US4 frontend**: T091, T092, T093, T101 can run in parallel (types, services, components, utils)
+- **Polish tasks**: T103, T104, T106, T107, T108, T109, T110, T112, T114, T118, T119, T120 can run in parallel (different files)
+
+---
+
+## Parallel Example: User Story 1 Backend
+
+```bash
+# These can run simultaneously (different files):
+Task T025: "Create backend/repository/channel_repo.py"
+Task T032: "Create web/src/types/channel.ts"
+Task T033: "Create web/src/services/api.ts"
+Task T035: "Create web/src/components/ChannelCard.tsx"
+
+# These must be sequential:
+Task T026: "Create backend/services/channel_service.py" (needs T025 repository)
+Task T027: "Create backend/routers/channels.py GET endpoint" (needs T026 service)
+Task T034: "Create web/src/services/channelApi.ts" (needs T027 endpoint)
+Task T037: "Create web/src/pages/Channels.tsx" (needs T034 API client)
+```
+
+---
+
+## Implementation Strategy
+
+### MVP First (User Stories 1 + 2 Only)
+
+1. Complete Phase 1: Setup ✅
+2. Complete Phase 2: Foundational ✅ (CRITICAL - blocks all stories)
+3. Complete Phase 3: User Story 1 ✅ (Channel management - independently testable)
+4. Complete Phase 4: User Story 2 ✅ (Download initiation - core value)
+5. **STOP and VALIDATE**: Test US1 + US2 independently using quickstart.md
+6. Deploy/demo if ready (functional YouTube downloader with basic features)
+
+### Full MVP (All 4 User Stories)
+
+1. MVP First (above) ✅
+2. Complete Phase 5: User Story 3 (Queue monitoring - enhanced UX)
+3. Complete Phase 6: User Story 4 (History & search - completeness)
+4. Complete Phase 7: Polish (error handling, logging, optimization)
+5. Full validation with quickstart.md test scenarios
+6. Production deployment
+
+### Incremental Delivery
+
+1. Phase 1 + 2 → Foundation ready
+2. Add US1 → Test independently → Users can manage channels ✅
+3. Add US2 → Test independently → Users can download videos ✅ MVP!
+4. Add US3 → Test independently → Users can monitor progress
+5. Add US4 → Test independently → Users can search history
+6. Add Phase 7 → Polish and optimize
+7. Each addition is deployable without breaking previous features
+
+### Parallel Team Strategy
+
+With multiple developers:
+
+1. Team completes Setup + Foundational together
+2. Once Foundational is done:
+   - Developer A: User Story 1 (backend + frontend)
+   - Developer B: User Story 2 backend
+   - Developer C: User Story 2 frontend (starts after Developer B creates endpoints)
+3. After US1 + US2 complete:
+   - Developer A: User Story 3
+   - Developer B: User Story 4
+   - Developer C: Polish tasks (can start earlier)
+
+---
+
+## Task Validation Checklist
+
+✅ **Format compliance**:
+- All tasks use `- [ ] [TID] [P?] [Story?] Description with file path` format
+- Task IDs are sequential: T001-T120
+- [P] marker only on truly parallelizable tasks (different files, no dependencies)
+- [Story] labels (US1, US2, US3, US4) on all user story tasks
+- Setup and Foundational tasks have NO story label
+- Polish tasks have NO story label
+
+✅ **Organization**:
+- Organized by user story (P1 → P2 → P3 → P4)
+- Each phase has clear purpose and checkpoint
+- Dependencies documented explicitly
+- Parallel opportunities identified
+
+✅ **Completeness**:
+- All 4 entities from data-model.md covered
+- All 19 API endpoints from contracts/api-spec.md covered
+- All 8 research decisions from research.md incorporated
+- All layers (models, repository, services, routers, components, pages) included
+- Frontend and backend for each user story
+
+✅ **File paths**:
+- Every task specifies exact file path
+- Paths match structure in plan.md
+- No ambiguous locations
+
+✅ **Independent testability**:
+- Each user story phase has checkpoint with test description
+- User Story 1 can be tested without US2, US3, US4
+- User Story 2 can be tested with just US1 (not US3, US4)
+- User Story 3 requires US2 but not US4
+- User Story 4 requires US2 but not US3
+
+---
+
+## Task Count Summary
+
+- **Phase 1 (Setup)**: 10 tasks (T001-T010)
+- **Phase 2 (Foundational)**: 14 tasks (T011-T024)
+- **Phase 3 (US1 - Channel Management)**: 17 tasks (T025-T041)
+  - Backend: 7 tasks
+  - Frontend: 10 tasks
+- **Phase 4 (US2 - Download Initiation)**: 26 tasks (T042-T067)
+  - Backend: 15 tasks
+  - Frontend: 11 tasks
+- **Phase 5 (US3 - Queue Monitoring)**: 17 tasks (T068-T084)
+  - Backend: 7 tasks
+  - Frontend: 10 tasks
+- **Phase 6 (US4 - History & Search)**: 18 tasks (T085-T102)
+  - Backend: 6 tasks
+  - Frontend: 12 tasks
+- **Phase 7 (Polish)**: 18 tasks (T103-T120)
+
+**Total**: 120 tasks
+
+**Parallel tasks**: 39 tasks marked with [P] (32.5% can run in parallel)
+
+**MVP tasks**: Phase 1 + Phase 2 + Phase 3 = 41 tasks (34% of total for basic channel management)
+
+**Core MVP tasks**: Phase 1 + Phase 2 + Phase 3 + Phase 4 = 67 tasks (56% for functional downloader)
+
+---
+
+## Notes
+
+- No test tasks included (MVP does not require automated tests per research.md)
+- Use quickstart.md for manual validation of each user story
+- Commit after each task or logical group
+- Verify against constitution at each checkpoint
+- Stop at any phase to validate story independently before continuing
+- Tasks marked [P] can be done in parallel if team has capacity
+- File paths are exact - no ambiguity about where code goes
+- Each user story is independently deployable and demonstrable
