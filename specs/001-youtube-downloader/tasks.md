@@ -44,14 +44,14 @@
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
 - [ ] T011 Create backend/models/database.py with SQLAlchemy engine, Base, SessionLocal, WAL mode config
-- [ ] T012 [P] Create backend/models/__init__.py to export Base and session management
+- [ ] T012 [P] Create backend/models/**init**.py to export Base and session management
 - [ ] T013 [P] Create backend/models/channel.py with Channel SQLAlchemy model (id, channel_id, name, url, date_added, last_updated)
 - [ ] T014 [P] Create backend/models/video.py with Video SQLAlchemy model (id, video_id, channel_id FK, title, url, upload_date, duration, file_path, file_size, metadata, date_added)
 - [ ] T015 [P] Create backend/models/download_task.py with DownloadTask SQLAlchemy model (id, task_id, video_id FK, status, progress_percent, error_message, retry_count, created_at, started_at, completed_at)
 - [ ] T016 [P] Create backend/models/download_history.py with DownloadHistory SQLAlchemy model (id, video_id FK, task_id, download_date, file_size, download_duration_seconds, success, error_code)
 - [ ] T017 Create backend/models/schemas.py with Pydantic request/response models for all entities
 - [ ] T018 Initialize database by running Base.metadata.create_all(engine) - creates all tables with indexes and constraints
-- [ ] T019 Create backend/main.py with FastAPI app, CORS middleware for http://localhost:5173 and chrome-extension://*
+- [ ] T019 Create backend/main.py with FastAPI app, CORS middleware for http://localhost:5173 and chrome-extension://\*
 - [ ] T020 Configure Huey in backend/main.py: SqliteHuey(filename='data/huey.db') with consumer thread in lifespan event
 - [ ] T021 [P] Create backend/utils/logger.py for structured logging configuration
 - [ ] T022 [P] Create backend/utils/validators.py with URL validation and path sanitization functions
@@ -219,7 +219,7 @@
 - [ ] T111 Wrap App in ErrorBoundary in web/src/main.tsx
 - [ ] T112 [P] Add toast notification system in web/src/components/Toast.tsx for success/error messages
 - [ ] T113 Add README.md at repository root with project overview, setup instructions (link to quickstart.md), and architecture diagram
-- [ ] T114 [P] Add .gitignore at repository root: venv/, node_modules/, dist/, data/, downloads/, *.db, .env
+- [ ] T114 [P] Add .gitignore at repository root: venv/, node_modules/, dist/, data/, downloads/, \*.db, .env
 - [ ] T115 Validate all endpoints against contracts/api-spec.md: verify request/response schemas match
 - [ ] T116 Validate database schema against data-model.md: verify all indexes, constraints, foreign keys exist
 - [ ] T117 Run through quickstart.md manual test scenarios for all 4 user stories to verify independent testability
@@ -341,6 +341,7 @@ With multiple developers:
 ## Task Validation Checklist
 
 ✅ **Format compliance**:
+
 - All tasks use `- [ ] [TID] [P?] [Story?] Description with file path` format
 - Task IDs are sequential: T001-T120
 - [P] marker only on truly parallelizable tasks (different files, no dependencies)
@@ -349,12 +350,14 @@ With multiple developers:
 - Polish tasks have NO story label
 
 ✅ **Organization**:
+
 - Organized by user story (P1 → P2 → P3 → P4)
 - Each phase has clear purpose and checkpoint
 - Dependencies documented explicitly
 - Parallel opportunities identified
 
 ✅ **Completeness**:
+
 - All 4 entities from data-model.md covered
 - All 19 API endpoints from contracts/api-spec.md covered
 - All 8 research decisions from research.md incorporated
@@ -362,11 +365,13 @@ With multiple developers:
 - Frontend and backend for each user story
 
 ✅ **File paths**:
+
 - Every task specifies exact file path
 - Paths match structure in plan.md
 - No ambiguous locations
 
 ✅ **Independent testability**:
+
 - Each user story phase has checkpoint with test description
 - User Story 1 can be tested without US2, US3, US4
 - User Story 2 can be tested with just US1 (not US3, US4)
