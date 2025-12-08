@@ -61,7 +61,7 @@ Code MUST prioritize simplicity and minimal external dependencies:
 - Only use libraries that solve critical problems
 - Prefer standard library solutions when performance is acceptable
 - Document justification for each non-trivial dependency
-- Frontend MUST use only: React, TypeScript, Vite, Shadcn, Axios
+- Frontend MUST use only: React, TypeScript, Vite, Shadcn, native fetch API
 
 **Rationale**: Reduces maintenance burden, security surface area, and build complexity. Easier to understand and debug.
 
@@ -103,7 +103,7 @@ Frontend build MUST be fully self-contained:
 - **Framework**: React 18+ with TypeScript
 - **Build Tool**: Vite for fast builds and HMR
 - **UI Library**: Shadcn components
-- **HTTP Client**: Axios for API communication
+- **HTTP Client**: Native fetch API (preferred) or Axios when necessary
 - **Package Manager**: pnpm (as evidenced by pnpm-lock.yaml)
 
 ## Code Organization Standards
@@ -182,4 +182,4 @@ This constitution supersedes all other development practices and preferences.
 - MINOR: New principle added, section expanded
 - PATCH: Clarifications, wording improvements, non-semantic changes
 
-**Version**: 1.0.0 | **Ratified**: 2025-12-08 | **Last Amended**: 2025-12-08
+**Version**: 1.0.1 | **Ratified**: 2025-12-08 | **Last Amended**: 2025-12-08
