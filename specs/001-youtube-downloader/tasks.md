@@ -24,16 +24,16 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Create backend directory structure: backend/models, backend/repository, backend/services, backend/routers, backend/tasks, backend/utils
-- [ ] T002 Create web directory structure: web/src/components, web/src/pages, web/src/services, web/src/types, web/src/utils
-- [ ] T003 Create backend/requirements.txt with dependencies: fastapi==0.124.0, uvicorn==0.38.0, SQLAlchemy==2.0.44, pydantic==2.12.5, huey==2.5.5, yt-dlp==2025.12.8
-- [ ] T004 [P] Initialize Python virtual environment and install backend dependencies: python -m venv backend/venv && pip install -r backend/requirements.txt
-- [ ] T005 [P] Initialize web/package.json with dependencies: react@19.2.0, react-dom@19.2.0, react-router@7.10.1, typescript@5.9.3, vite@7.2.4, @vitejs/plugin-react@5.1.1
-- [ ] T006 [P] Install web dependencies: cd web && pnpm install
-- [ ] T007 Create data/ and downloads/ directories at repository root for SQLite database and video storage
-- [ ] T008 [P] Create web/vite.config.ts with proxy configuration for /api to http://localhost:8000
-- [ ] T009 [P] Create web/tsconfig.json with strict mode enabled and path aliases
-- [ ] T010 [P] Create backend/.env template file with DATABASE_URL, HUEY_DB, DOWNLOAD_DIR, API_PORT, CORS_ORIGINS
+- [x] T001 Create backend directory structure: backend/models, backend/repository, backend/services, backend/routers, backend/tasks, backend/utils
+- [x] T002 Create web directory structure: web/src/components, web/src/pages, web/src/services, web/src/types, web/src/utils
+- [x] T003 Create backend/requirements.txt with dependencies: fastapi==0.124.0, uvicorn==0.38.0, SQLAlchemy==2.0.44, pydantic==2.12.5, huey==2.5.5, yt-dlp==2025.12.8
+- [x] T004 [P] Initialize Python virtual environment and install backend dependencies: python -m venv backend/venv && pip install -r backend/requirements.txt
+- [x] T005 [P] Initialize web/package.json with dependencies: react@19.2.0, react-dom@19.2.0, react-router@7.10.1, typescript@5.9.3, vite@7.2.4, @vitejs/plugin-react@5.1.1
+- [x] T006 [P] Install web dependencies: cd web && pnpm install
+- [x] T007 Create data/ and downloads/ directories at repository root for SQLite database and video storage
+- [x] T008 [P] Create web/vite.config.ts with proxy configuration for /api to http://localhost:8000
+- [x] T009 [P] Create web/tsconfig.json with strict mode enabled and path aliases
+- [x] T010 [P] Create backend/.env template file with DATABASE_URL, HUEY_DB, DOWNLOAD_DIR, API_PORT, CORS_ORIGINS
 
 ---
 
@@ -43,20 +43,20 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T011 Create backend/models/database.py with SQLAlchemy engine, Base, SessionLocal, WAL mode config
-- [ ] T012 [P] Create backend/models/**init**.py to export Base and session management
-- [ ] T013 [P] Create backend/models/channel.py with Channel SQLAlchemy model (id, channel_id, name, url, date_added, last_updated)
-- [ ] T014 [P] Create backend/models/video.py with Video SQLAlchemy model (id, video_id, channel_id FK, title, url, upload_date, duration, file_path, file_size, metadata, date_added)
-- [ ] T015 [P] Create backend/models/download_task.py with DownloadTask SQLAlchemy model (id, task_id, video_id FK, status, progress_percent, error_message, retry_count, created_at, started_at, completed_at)
-- [ ] T016 [P] Create backend/models/download_history.py with DownloadHistory SQLAlchemy model (id, video_id FK, task_id, download_date, file_size, download_duration_seconds, success, error_code)
-- [ ] T017 Create backend/models/schemas.py with Pydantic request/response models for all entities
-- [ ] T018 Initialize database by running Base.metadata.create_all(engine) - creates all tables with indexes and constraints
-- [ ] T019 Create backend/main.py with FastAPI app, CORS middleware for http://localhost:5173 and chrome-extension://\*
-- [ ] T020 Configure Huey in backend/main.py: SqliteHuey(filename='data/huey.db') with consumer thread in lifespan event
-- [ ] T021 [P] Create backend/utils/logger.py for structured logging configuration
-- [ ] T022 [P] Create backend/utils/validators.py with URL validation and path sanitization functions
-- [ ] T023 [P] Create backend/utils/config.py to load environment variables from .env file
-- [ ] T024 Add health check endpoint GET /api/health in backend/main.py returning status, version, dependencies
+- [x] T011 Create backend/models/database.py with SQLAlchemy engine, Base, SessionLocal, WAL mode config
+- [x] T012 [P] Create backend/models/**init**.py to export Base and session management
+- [x] T013 [P] Create backend/models/channel.py with Channel SQLAlchemy model (id, channel_id, name, url, download_path, date_added, last_updated)
+- [x] T014 [P] SKIPPED - Video model removed per data model update (video info stored in DownloadHistory)
+- [x] T015 [P] Create backend/models/download_task.py with DownloadTask SQLAlchemy model (id, task_id, channel_id FK, video_id STRING, video_url, status, progress_percent, error_message, retry_count, created_at, started_at, completed_at)
+- [x] T016 [P] Create backend/models/download_history.py with DownloadHistory SQLAlchemy model (id, channel_id FK, video_id, video_title, video_url, task_id, download_date, upload_date, duration, file_path, file_size, video_metadata, download_duration_seconds, success, error_code)
+- [x] T017 Create backend/models/schemas.py with Pydantic request/response models for all entities
+- [x] T018 Initialize database by running Base.metadata.create_all(engine) - creates all tables with indexes and constraints
+- [x] T019 Create backend/main.py with FastAPI app, CORS middleware for http://localhost:5173 and chrome-extension://\*
+- [x] T020 Configure Huey in backend/main.py: SqliteHuey(filename='data/huey.db') configured for task execution
+- [x] T021 [P] Create backend/utils/logger.py for structured logging configuration
+- [x] T022 [P] Create backend/utils/validators.py with URL validation and path sanitization functions
+- [x] T023 [P] Create backend/utils/config.py to load environment variables from .env file
+- [x] T024 Add health check endpoint GET /api/health in backend/main.py returning status, version, dependencies
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -70,26 +70,26 @@
 
 ### Backend for User Story 1
 
-- [ ] T025 [P] [US1] Create backend/repository/channel_repo.py with CRUD functions: get_all_channels(), get_channel_by_id(), create_channel(), delete_channel()
-- [ ] T026 [US1] Create backend/services/channel_service.py with business logic: validate channel URL, extract channel info using yt-dlp, check for duplicates
-- [ ] T027 [US1] Create backend/routers/channels.py with GET /api/channels endpoint (returns all channels with video count)
-- [ ] T028 [US1] Add POST /api/channels endpoint to backend/routers/channels.py (validates URL, extracts metadata, saves to DB)
-- [ ] T029 [US1] Add DELETE /api/channels/{channel_id} endpoint to backend/routers/channels.py (cascade deletes videos)
-- [ ] T030 [US1] Register channels router in backend/main.py with prefix /api/channels
-- [ ] T031 [US1] Add error handling in backend/services/channel_service.py for invalid URLs, duplicate channels, YouTube API errors
+- [x] T025 [P] [US1] Create backend/repository/channel_repo.py with CRUD functions: get_all_channels(), get_channel_by_id(), create_channel(), delete_channel()
+- [x] T026 [US1] Create backend/services/channel_service.py with business logic: validate channel URL, extract channel info using yt-dlp, check for duplicates
+- [x] T027 [US1] Create backend/routers/channels.py with GET /api/channels endpoint (returns all channels with video count)
+- [x] T028 [US1] Add POST /api/channels endpoint to backend/routers/channels.py (validates URL, extracts metadata, saves to DB)
+- [x] T029 [US1] Add DELETE /api/channels/{channel_id} endpoint to backend/routers/channels.py (cascade deletes videos)
+- [x] T030 [US1] Register channels router in backend/main.py with prefix /api/channels
+- [x] T031 [US1] Add error handling in backend/services/channel_service.py for invalid URLs, duplicate channels, YouTube API errors
 
 ### Frontend for User Story 1
 
-- [ ] T032 [P] [US1] Create web/src/types/channel.ts with Channel and API response interfaces
-- [ ] T033 [P] [US1] Create web/src/services/api.ts with base fetch wrapper function and error handling
-- [ ] T034 [US1] Create web/src/services/channelApi.ts with functions: fetchChannels(), addChannel(url), deleteChannel(id)
-- [ ] T035 [P] [US1] Create web/src/components/ChannelCard.tsx to display channel info (name, URL, date added, video count, delete button)
-- [ ] T036 [P] [US1] Create web/src/components/ChannelList.tsx to render list of ChannelCard components
-- [ ] T037 [US1] Create web/src/pages/Channels.tsx with add channel form, channel list, and state management
-- [ ] T038 [US1] Add routing in web/src/App.tsx with react-router v7 (BrowserRouter, Routes, Route): / → Channels page
-- [ ] T039 [US1] Create web/src/main.tsx as React entry point with StrictMode and BrowserRouter from react-router
-- [ ] T040 [US1] Add loading states and error messages in web/src/pages/Channels.tsx for add/delete operations
-- [ ] T041 [US1] Style web/src/pages/Channels.tsx with basic CSS for layout and form (or use Shadcn Button, Input components)
+- [x] T032 [P] [US1] Create web/src/types/channel.ts with Channel and API response interfaces
+- [x] T033 [P] [US1] Create web/src/services/api.ts with base fetch wrapper function and error handling
+- [x] T034 [US1] Create web/src/services/channelApi.ts with functions: fetchChannels(), addChannel(url), deleteChannel(id)
+- [x] T035 [P] [US1] Create web/src/components/ChannelCard.tsx to display channel info (name, URL, date added, video count, delete button)
+- [x] T036 [P] [US1] Create web/src/components/ChannelList.tsx to render list of ChannelCard components
+- [x] T037 [US1] Create web/src/pages/Channels.tsx with add channel form, channel list, and state management
+- [x] T038 [US1] Add routing in web/src/App.tsx with react-router v7 (BrowserRouter, Routes, Route): / → Channels page
+- [x] T039 [US1] ALREADY EXISTS - web/src/main.tsx with StrictMode (no BrowserRouter needed here per react-router v7)
+- [x] T040 [US1] Add loading states and error messages in web/src/pages/Channels.tsx for add/delete operations
+- [x] T041 [US1] Style web/src/pages/Channels.tsx with basic CSS for layout and form
 
 **Checkpoint**: User Story 1 complete - users can manage channels, persist data, independently testable
 
