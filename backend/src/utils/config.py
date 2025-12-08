@@ -13,6 +13,9 @@ class Settings(BaseSettings):
 
     # Huey Task Queue
     HUEY_DB: str = "D:/DEV/yt-download-full-stack/data/huey.db"
+    HUEY_IMMEDIATE_MODE: bool = (
+        False  # Set to True for development (tasks run immediately)
+    )
 
     # Download Configuration
     DOWNLOAD_DIR: str = "D:/DEV/yt-download-full-stack/downloads"

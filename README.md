@@ -95,22 +95,31 @@ See [specs/001-youtube-downloader/quickstart.md](specs/001-youtube-downloader/qu
 
 ### Running the Application
 
-1. **Start backend server**
+**⚠️ IMPORTANT**: You need to run **3 processes** for the app to work:
+
+1. **Backend API Server** (Terminal 1)
    ```bash
    cd backend
-   source venv/bin/activate
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
    python main.py
    # Backend runs on http://localhost:8000
    ```
 
-2. **Start Huey consumer** (in separate terminal)
+2. **Huey Task Consumer** (Terminal 2) - **REQUIRED for downloads to work!**
    ```bash
    cd backend
-   source venv/bin/activate
-   python -m huey.consumer main.huey
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   python run_consumer.py
+   
+   # Or using huey command directly:
+   # python -m huey.consumer main.huey -v -w 2 -k thread
    ```
+   
+   ⚡ **Without this, downloads will queue but won't execute!**
+   
+   💡 **Alternative for Development**: Set `HUEY_IMMEDIATE_MODE=true` in `.env` to skip running consumer (tasks execute immediately)
 
-3. **Start frontend dev server** (in separate terminal)
+3. **Frontend Dev Server** (Terminal 3)
    ```bash
    cd web
    pnpm dev

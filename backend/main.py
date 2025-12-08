@@ -6,29 +6,38 @@ from pathlib import Path
 # Add backend directory to Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from contextlib import asynccontextmanager
 import time
 import traceback
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from src.models import Base, engine
-from src.routers import channels, downloads, queue, history
+from src.routers import channels, downloads, history, queue
 from src.tasks.huey_instance import huey
+from src.utils import ffmpeg_installer
 from src.utils.config import settings
-from src.utils.logger import get_logger
 from src.utils.error_handlers import (
-    DownloadException,
-    ValidationException,
-    NotFoundException,
     DiskSpaceException,
+    DownloadException,
+    NotFoundException,
+    ValidationException,
 )
+from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
 
 # Ensure directories exist
 settings.ensure_directories()
+installer = ffmpeg_installer.FFmpegInstaller()
+if installer.is_installed():
+    # Add to PATH
+    installer.add_to_path()
+    print("✓ FFmpeg ready")
+else:
+    print("⚠ FFmpeg not found - will prompt for installation")
+    installer.download_and_install()
 
 
 @asynccontextmanager
@@ -74,18 +83,18 @@ app.add_middleware(
 async def log_requests(request: Request, call_next):
     """Log all API requests with timing information."""
     start_time = time.time()
-    
+
     # Process request
     try:
         response = await call_next(request)
         process_time = time.time() - start_time
-        
+
         logger.info(
             f"{request.method} {request.url.path} - "
             f"Status: {response.status_code} - "
             f"Duration: {process_time:.3f}s"
         )
-        
+
         return response
     except Exception as e:
         process_time = time.time() - start_time
