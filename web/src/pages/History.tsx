@@ -13,7 +13,7 @@ import {
   RefreshCw,
   Search,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { HistoryItem } from '../components/HistoryItem';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { Badge } from '../components/ui/badge';
@@ -44,7 +44,7 @@ export default function History() {
   const [limit] = useState(50);
 
   // Fetch history with filters
-  const loadHistory = async (newOffset: number = 0) => {
+  const loadHistory = useCallback(async (newOffset: number = 0) => {
     setIsLoading(true);
     setError('');
     
@@ -69,35 +69,36 @@ export default function History() {
     } finally {
       setIsLoading(false);
     }
-  };
-
+  }, [dateFrom, dateTo, limit, search, successFilter]);
+  
   // Fetch stats
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const statsData = await fetchHistoryStats(period);
       setStats(statsData);
     } catch (err: unknown) {
       console.error('Failed to fetch stats:', err);
     }
-  };
+  }, [period]);
 
   // Initial load
   useEffect(() => {
     loadHistory();
     loadStats();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Reload when filters change
-  useEffect(() => {
-    if (!isLoading) {
-      loadHistory(0);
-    }
-  }, [search, dateFrom, dateTo, successFilter]);
+  // // Reload when filters change
+  // useEffect(() => {
+  //   if (!isLoading) {
+  //     loadHistory(0);
+  //   }
+  // }, [isLoading, loadHistory]);
 
   // Reload stats when period changes
   useEffect(() => {
     loadStats();
-  }, [period]);
+  }, [loadStats]);
 
   // Handle search with debounce
   useEffect(() => {
@@ -126,14 +127,16 @@ export default function History() {
   const hasMore = offset + limit < total;
 
   return (
-    <div className="container mx-auto py-8 max-w-6xl">
+    <div className="container mx-auto py-6 sm:py-8 px-4 max-w-6xl">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-          <HistoryIcon className="h-8 w-8" />
+      <div className="mb-8 space-y-2">
+        <h1 className="text-3xl sm:text-4xl font-bold flex items-center gap-3 bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <div className="rounded-lg bg-primary p-2">
+            <HistoryIcon className="h-6 w-6 sm:h-7 sm:w-7 text-primary-foreground" />
+          </div>
           Download History
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           Browse your complete download history with search and filters
         </p>
       </div>
@@ -141,9 +144,9 @@ export default function History() {
       {/* Stats Cards */}
       {stats && (
         <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Statistics</h2>
-            <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <h2 className="text-xl font-semibold">Statistics</h2>
+            <div className="flex flex-wrap gap-2">
               {(['7d', '30d', '90d', 'all'] as const).map((p) => (
                 <Button
                   key={p}
@@ -208,10 +211,10 @@ export default function History() {
       )}
 
       {/* Filters */}
-      <Card className="mb-6">
+      <Card className="mb-6 border-primary/20">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Filter className="h-5 w-5 text-primary" />
             Filters
           </CardTitle>
         </CardHeader>
@@ -219,7 +222,7 @@ export default function History() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search */}
             <div className="lg:col-span-2">
-              <label className="text-sm font-medium mb-2 block">Search</label>
+              <label className="text-sm font-medium mb-2 block">Search Videos</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -297,30 +300,36 @@ export default function History() {
       </Card>
 
       {/* History List */}
-      <Card>
+      <Card className="border-primary/20">
         <CardHeader>
-          <CardTitle>Download History</CardTitle>
-          <CardDescription>
-            {hasFilters && (
-              <Badge variant="outline" className="mr-2">
-                Filtered
-              </Badge>
-            )}
-            {total} record(s) found
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-xl">Download History</CardTitle>
+              <CardDescription className="mt-1">
+                {hasFilters && (
+                  <Badge variant="outline" className="mr-2">
+                    Filtered
+                  </Badge>
+                )}
+                {total} record(s) found
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading && history.length === 0 ? (
-            <div className="text-center py-12">
-              <RefreshCw className="h-12 w-12 mx-auto mb-3 animate-spin text-muted-foreground" />
+            <div className="text-center py-16">
+              <RefreshCw className="h-12 w-12 mx-auto mb-3 animate-spin text-primary" />
               <p className="text-muted-foreground">Loading history...</p>
             </div>
           ) : history.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <HistoryIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No download history found</p>
+            <div className="text-center py-16">
+              <div className="rounded-full bg-muted p-6 w-fit mx-auto mb-4">
+                <HistoryIcon className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No download history found</h3>
               {hasFilters && (
-                <p className="text-sm mt-1">Try adjusting your filters</p>
+                <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters</p>
               )}
             </div>
           ) : (

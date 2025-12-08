@@ -19,40 +19,44 @@ export default function ChannelCard({
   isDeleting = false,
 }: ChannelCardProps) {
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <CardTitle className="text-xl font-semibold">
-            {channel.name}
-          </CardTitle>
+    <Card className="group hover:shadow-lg transition-all duration-200 hover:border-primary/50">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <CardTitle className="text-lg font-semibold truncate group-hover:text-primary transition-colors">
+              {channel.name}
+            </CardTitle>
+            <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
+                {channel.video_count || 0} videos
+              </span>
+              <span>•</span>
+              <span>
+                {new Date(channel.date_added).toLocaleDateString()}
+              </span>
+            </div>
+          </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => onDelete(channel.id)}
             disabled={isDeleting}
-            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent>
         <a
           href={channel.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-sm text-primary hover:underline break-all"
+          className="flex items-center gap-2 text-sm text-primary hover:underline break-all group/link"
         >
-          <ExternalLink className="h-3 w-3 shrink-0" />
-          {channel.url}
+          <ExternalLink className="h-3.5 w-3.5 shrink-0 group-hover/link:translate-x-0.5 transition-transform" />
+          <span className="truncate">{channel.url}</span>
         </a>
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <span>Videos: {channel.video_count || 0}</span>
-          <span>•</span>
-          <span>
-            Added: {new Date(channel.date_added).toLocaleDateString()}
-          </span>
-        </div>
       </CardContent>
     </Card>
   );

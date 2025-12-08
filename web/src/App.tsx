@@ -12,55 +12,51 @@ import History from "./pages/History";
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen flex flex-col">
+      <div className="min-h-screen w-full flex flex-col bg-linear-to-br from-background to-secondary/20">
         {/* Navigation */}
-        <nav className="border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-          <div className="container mx-auto px-4">
+        <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Youtube className="h-6 w-6 text-primary" />
-                <h1 className="text-xl font-bold">YouTube Downloader</h1>
-              </div>
-              <ul className="flex items-center gap-6">
-                <li>
-                  <Link
-                    to="/"
-                    className="text-sm font-medium transition-colors hover:text-primary"
-                  >
-                    Channels
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/downloads"
-                    className="text-sm font-medium transition-colors hover:text-primary"
-                  >
-                    Downloads
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/queue"
-                    className="text-sm font-medium transition-colors hover:text-primary"
-                  >
-                    Queue
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    to="/history"
-                    className="text-sm font-medium transition-colors hover:text-primary"
-                  >
-                    History
-                  </Link>
-                </li>
-              </ul>
+              <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                <div className="rounded-lg bg-primary p-2">
+                  <Youtube className="h-5 w-5 text-primary-foreground" />
+                </div>
+                <span className="text-xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  YT Downloader
+                </span>
+              </Link>
+              <nav className="hidden md:flex items-center gap-2">
+                <Link
+                  to="/"
+                  className="px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
+                >
+                  Channels
+                </Link>
+                <Link
+                  to="/downloads"
+                  className="px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
+                >
+                  Downloads
+                </Link>
+                <Link
+                  to="/queue"
+                  className="px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
+                >
+                  Queue
+                </Link>
+                <Link
+                  to="/history"
+                  className="px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground"
+                >
+                  History
+                </Link>
+              </nav>
             </div>
           </div>
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 bg-background">
+        <main className="flex-1 container">
           <Routes>
             <Route path="/" element={<Channels />} />
             <Route path="/downloads" element={<Downloads />} />
@@ -68,6 +64,13 @@ function App() {
             <Route path="/history" element={<History />} />
           </Routes>
         </main>
+
+        {/* Footer */}
+        <footer className="border-t py-6 bg-background/50">
+          <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+            <p>YouTube Downloader © 2025 - Download and manage your favorite videos</p>
+          </div>
+        </footer>
       </div>
     </BrowserRouter>
   );

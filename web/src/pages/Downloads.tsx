@@ -42,25 +42,24 @@ export default function Downloads() {
   };
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-          <Download className="h-8 w-8" />
+    <div className="container mx-auto py-6 sm:py-8 px-4 max-w-5xl">
+      <div className="mb-8 space-y-3">
+        <h1 className="text-3xl sm:text-4xl font-bold flex items-center gap-3 bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <div className="rounded-lg bg-primary p-2">
+            <Download className="h-6 w-6 sm:h-7 sm:w-7 text-primary-foreground" />
+          </div>
           Download Videos
         </h1>
-        <p className="text-muted-foreground">
-          Paste YouTube video URLs below to start downloading. Channels will be
-          created automatically.
+        <p className="text-base text-muted-foreground">
+          Paste YouTube video URLs below to start downloading. Channels will be created automatically.
         </p>
       </div>
 
-      <Card className="mb-6">
+      <Card className="mb-6 border-primary/20 shadow-sm">
         <CardHeader>
-          <CardTitle>Batch Download</CardTitle>
+          <CardTitle className="text-xl">Batch Download</CardTitle>
           <CardDescription>
-            Enter one or more YouTube video URLs (one per line). The system will
-            automatically detect channels, check for duplicates, and queue
-            downloads.
+            Enter one or more YouTube video URLs (one per line). The system will automatically detect channels, check for duplicates, and queue downloads.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -77,33 +76,33 @@ export default function Downloads() {
       )}
 
       {result && (
-        <Card className="mb-6">
+        <Card className="mb-6 border-green-200 dark:border-green-900 bg-green-50/50 dark:bg-green-950/20">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
+            <CardTitle className="flex items-center gap-2 text-green-700 dark:text-green-400">
+              <CheckCircle2 className="h-5 w-5" />
               Download Request Submitted
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             {/* Summary Stats */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="text-center p-4 bg-muted rounded-lg">
-                <div className="text-2xl font-bold text-primary">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="text-center p-5 bg-background rounded-lg border shadow-sm">
+                <div className="text-3xl font-bold text-primary mb-1">
                   {result.total_requested}
                 </div>
-                <div className="text-sm text-muted-foreground">Requested</div>
+                <div className="text-sm font-medium text-muted-foreground">Requested</div>
               </div>
-              <div className="text-center p-4 bg-green-50 dark:bg-green-950 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
+              <div className="text-center p-5 bg-green-500/10 dark:bg-green-500/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">
                   {result.total_created}
                 </div>
-                <div className="text-sm text-muted-foreground">Queued</div>
+                <div className="text-sm font-medium text-muted-foreground">Queued</div>
               </div>
-              <div className="text-center p-4 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
-                <div className="text-2xl font-bold text-yellow-600">
+              <div className="text-center p-5 bg-yellow-500/10 dark:bg-yellow-500/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-1">
                   {result.total_skipped}
                 </div>
-                <div className="text-sm text-muted-foreground">Skipped</div>
+                <div className="text-sm font-medium text-muted-foreground">Skipped</div>
               </div>
             </div>
 

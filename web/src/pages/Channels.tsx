@@ -109,37 +109,40 @@ export default function Channels() {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4 max-w-7xl">
-      <div className="space-y-6">
+    <div className="container mx-auto py-6 sm:py-8 px-4 max-w-7xl">
+      <div className="space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+        <div className="space-y-2">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             YouTube Channels
           </h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-base text-muted-foreground">
             Manage the YouTube channels you want to download from
           </p>
         </div>
 
         {/* Add Channel Form */}
-        <Card>
+        <Card className="border-primary/20 shadow-sm">
           <CardHeader>
-            <CardTitle>Add New Channel</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-primary" />
+              Add New Channel
+            </CardTitle>
             <CardDescription>
               Enter a YouTube channel URL to start downloading videos
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAddChannel} className="flex gap-2">
+            <form onSubmit={handleAddChannel} className="flex flex-col sm:flex-row gap-3">
               <Input
                 type="text"
-                placeholder="https://www.youtube.com/@channel"
+                placeholder="https://www.youtube.com/@channel or https://youtube.com/@username"
                 value={newChannelUrl}
                 onChange={(e) => setNewChannelUrl(e.target.value)}
                 disabled={addingChannel}
                 className="flex-1"
               />
-              <Button type="submit" disabled={addingChannel}>
+              <Button type="submit" disabled={addingChannel} className="sm:w-auto w-full">
                 {addingChannel ? (
                   <>
                     <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
@@ -165,9 +168,9 @@ export default function Channels() {
         {/* Channel List */}
         <div>
           {loading && (
-            <div className="flex items-center justify-center py-12">
-              <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">
+            <div className="flex flex-col items-center justify-center py-16 gap-3">
+              <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">
                 Loading channels...
               </span>
             </div>
@@ -175,7 +178,7 @@ export default function Channels() {
 
           {error && (
             <Alert variant="destructive">
-              <AlertDescription className="flex items-center justify-between">
+              <AlertDescription className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <span>{error}</span>
                 <Button variant="outline" size="sm" onClick={loadChannels}>
                   Retry
@@ -184,12 +187,33 @@ export default function Channels() {
             </Alert>
           )}
 
-          {!loading && !error && (
-            <ChannelList
-              channels={channels}
-              onDeleteChannel={handleDeleteChannel}
-              deletingId={deletingId}
-            />
+          {!loading && !error && channels.length === 0 && (
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="rounded-full bg-muted p-4 mb-4">
+                  <Plus className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">No channels yet</h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  Add your first YouTube channel above to start downloading videos
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {!loading && !error && channels.length > 0 && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">
+                  Your Channels ({channels.length})
+                </h2>
+              </div>
+              <ChannelList
+                channels={channels}
+                onDeleteChannel={handleDeleteChannel}
+                deletingId={deletingId}
+              />
+            </div>
           )}
         </div>
       </div>

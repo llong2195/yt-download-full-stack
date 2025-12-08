@@ -2,12 +2,13 @@
  * QueueItem component - Display individual download task with status
  */
 
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import type { DownloadTask } from '../types/download';
+import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Progress } from './ui/progress';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { RefreshCw, AlertCircle } from 'lucide-react';
+import { Progress } from './ui/progress';
 
 interface QueueItemProps {
   task: DownloadTask;
@@ -57,9 +58,14 @@ export function QueueItem({ task, channelName, onRetry, isRetrying = false }: Qu
   const canRetry = task.status === 'failed' && task.retry_count < 3;
 
   return (
-    <Card>
+    <Card className="hover:shadow-md transition-shadow border-l-4" style={{
+      borderLeftColor: task.status === 'downloading' ? 'hsl(var(--primary))' : 
+                       task.status === 'completed' ? 'hsl(142, 76%, 36%)' :
+                       task.status === 'failed' ? 'hsl(var(--destructive))' :
+                       'hsl(var(--muted))'
+    }}>
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             <CardTitle className="text-base font-mono truncate">
               {task.video_id}
@@ -72,7 +78,7 @@ export function QueueItem({ task, channelName, onRetry, isRetrying = false }: Qu
           </div>
           <Badge 
             variant={getStatusBadgeVariant(task.status)}
-            className={getStatusColorClass(task.status)}
+            className={`${getStatusColorClass(task.status)} shrink-0`}
           >
             {task.status.toUpperCase()}
           </Badge>
@@ -81,35 +87,42 @@ export function QueueItem({ task, channelName, onRetry, isRetrying = false }: Qu
 
       <CardContent className="space-y-3">
         {/* Video URL */}
-        <div className="text-xs text-muted-foreground truncate">
+        <div className="text-xs text-muted-foreground truncate font-mono bg-muted/50 px-2 py-1 rounded">
           {task.video_url}
         </div>
 
         {/* Progress Bar */}
         {showProgress && (
-          <div className="space-y-1">
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Downloading...</span>
-              <span>{task.progress_percent}%</span>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm font-medium">
+              <span className="text-primary">Downloading...</span>
+              <span className="text-primary">{task.progress_percent}%</span>
             </div>
-            <Progress value={task.progress_percent} className="h-2" />
+            <Progress value={task.progress_percent} className="h-2.5" />
           </div>
         )}
 
         {/* Error Message */}
         {task.status === 'failed' && task.error_message && (
-          <div className="flex items-start gap-2 p-2 bg-red-50 dark:bg-red-950/20 rounded text-xs text-red-800 dark:text-red-300">
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-            <span className="flex-1">{task.error_message}</span>
-          </div>
+          <Alert variant="destructive" className="py-2">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="text-xs">
+              {task.error_message}
+            </AlertDescription>
+          </Alert>
         )}
 
-        {/* Task Metadata */}
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <div className="space-y-1">
-            <div>Task ID: {task.task_id.slice(0, 8)}...</div>
+        {/* Task Metadata & Actions */}
+        <div className="flex items-center justify-between pt-2 border-t">
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <div className="font-mono">ID: {task.task_id.slice(0, 12)}...</div>
             {task.retry_count > 0 && (
-              <div>Retry: {task.retry_count}/3</div>
+              <div className="flex items-center gap-1">
+                <span className="font-medium">Retry:</span>
+                <Badge variant="outline" className="text-xs px-1 py-0">
+                  {task.retry_count}/3
+                </Badge>
+              </div>
             )}
           </div>
 
@@ -123,12 +136,12 @@ export function QueueItem({ task, channelName, onRetry, isRetrying = false }: Qu
             >
               {isRetrying ? (
                 <>
-                  <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                   Retrying...
                 </>
               ) : (
                 <>
-                  <RefreshCw className="h-3 w-3 mr-1" />
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                   Retry
                 </>
               )}
@@ -137,15 +150,15 @@ export function QueueItem({ task, channelName, onRetry, isRetrying = false }: Qu
         </div>
 
         {/* Timestamps */}
-        <div className="text-xs text-muted-foreground space-y-1">
+        <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t">
           {task.created_at && (
-            <div>Created: {new Date(task.created_at).toLocaleString()}</div>
+            <div><span className="font-medium">Created:</span> {new Date(task.created_at).toLocaleString()}</div>
           )}
           {task.started_at && (
-            <div>Started: {new Date(task.started_at).toLocaleString()}</div>
+            <div><span className="font-medium">Started:</span> {new Date(task.started_at).toLocaleString()}</div>
           )}
           {task.completed_at && (
-            <div>Completed: {new Date(task.completed_at).toLocaleString()}</div>
+            <div><span className="font-medium">Completed:</span> {new Date(task.completed_at).toLocaleString()}</div>
           )}
         </div>
       </CardContent>

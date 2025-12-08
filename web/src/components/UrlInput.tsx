@@ -52,6 +52,14 @@ function parseUrls(input: string): { valid: string[]; invalid: string[] } {
 export function UrlInput({ onSubmit, isLoading = false }: UrlInputProps) {
   const [input, setInput] = useState("");
   const [validationError, setValidationError] = useState<string>("");
+  const [urlCount, setUrlCount] = useState(0);
+
+  // Count URLs as user types
+  const handleInputChange = (value: string) => {
+    setInput(value);
+    const lines = value.split("\n").filter(line => line.trim().length > 0);
+    setUrlCount(lines.length);
+  };
 
   const handleSubmit = () => {
     setValidationError("");
@@ -82,23 +90,34 @@ export function UrlInput({ onSubmit, isLoading = false }: UrlInputProps) {
   const handleClear = () => {
     setInput("");
     setValidationError("");
+    setUrlCount(0);
   };
 
   return (
     <div className="space-y-4">
       <div>
-        <label htmlFor="url-input" className="block text-sm font-medium mb-2">
-          YouTube Video URLs (one per line)
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label htmlFor="url-input" className="block text-sm font-medium">
+            YouTube Video URLs
+          </label>
+          {urlCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {urlCount} URL{urlCount !== 1 ? 's' : ''} entered
+            </span>
+          )}
+        </div>
         <Textarea
           id="url-input"
           value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={`https://www.youtube.com/watch?v=dQw4w9WgXcQ\nhttps://youtu.be/jNQXAC9IVRw\nhttps://www.youtube.com/watch?v=9bZkp7q19f0`}
-          rows={8}
-          className="font-mono text-sm"
+          onChange={(e) => handleInputChange(e.target.value)}
+          placeholder={`Paste YouTube video URLs here (one per line):\n\nhttps://www.youtube.com/watch?v=dQw4w9WgXcQ\nhttps://youtu.be/jNQXAC9IVRw\nhttps://www.youtube.com/watch?v=9bZkp7q19f0`}
+          rows={10}
+          className="font-mono text-sm resize-y"
           disabled={isLoading}
         />
+        <p className="text-xs text-muted-foreground mt-2">
+          Supported formats: youtube.com/watch?v=ID, youtu.be/ID, m.youtube.com/watch?v=ID
+        </p>
       </div>
 
       {validationError && (
@@ -112,14 +131,27 @@ export function UrlInput({ onSubmit, isLoading = false }: UrlInputProps) {
         </Alert>
       )}
 
-      <div className="flex gap-2">
-        <Button onClick={handleSubmit} disabled={isLoading || !input.trim()}>
-          {isLoading ? "Processing..." : "Download All"}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Button 
+          onClick={handleSubmit} 
+          disabled={isLoading || !input.trim()}
+          className="sm:flex-1"
+          size="lg"
+        >
+          {isLoading ? (
+            <>
+              <AlertCircle className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            "Download All Videos"
+          )}
         </Button>
         <Button
           variant="outline"
           onClick={handleClear}
           disabled={isLoading || !input.trim()}
+          size="lg"
         >
           Clear
         </Button>

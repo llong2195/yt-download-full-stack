@@ -97,20 +97,22 @@ export default function Queue() {
     : [];
 
   return (
-    <div className="container mx-auto py-8 max-w-6xl">
+    <div className="container mx-auto py-6 sm:py-8 px-4 max-w-6xl">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
-              <Download className="h-8 w-8" />
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-2">
+            <h1 className="text-3xl sm:text-4xl font-bold flex items-center gap-3 bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              <div className="rounded-lg bg-primary p-2">
+                <Download className="h-6 w-6 sm:h-7 sm:w-7 text-primary-foreground" />
+              </div>
               Download Queue
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-base text-muted-foreground">
               Monitor active downloads and view real-time progress
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
+          <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
@@ -127,13 +129,13 @@ export default function Queue() {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
-            <Card key={stat.label}>
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
+            <Card key={stat.label} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <CardDescription className="flex items-center gap-2 text-xs font-medium">
                   <Icon className={`h-4 w-4 ${stat.color}`} />
                   {stat.label}
                 </CardDescription>
@@ -158,22 +160,33 @@ export default function Queue() {
       )}
 
       {/* Active Tasks */}
-      <Card>
+      <Card className="border-primary/20">
         <CardHeader>
-          <CardTitle>Active Tasks</CardTitle>
-          <CardDescription>
-            {queueData?.active_tasks.length || 0} task(s) in progress
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-xl">Active Tasks</CardTitle>
+              <CardDescription className="mt-1">
+                {queueData?.active_tasks.length || 0} task(s) in progress
+              </CardDescription>
+            </div>
+            {queueData && queueData.active_tasks.length > 0 && (
+              <Badge variant="secondary" className="text-base px-3 py-1">
+                {queueData.active_tasks.length}
+              </Badge>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {!queueData || queueData.active_tasks.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Download className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No active downloads</p>
-              <p className="text-sm mt-1">Start downloads from the Downloads page</p>
+            <div className="text-center py-16">
+              <div className="rounded-full bg-muted p-6 w-fit mx-auto mb-4">
+                <Download className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">No active downloads</h3>
+              <p className="text-sm text-muted-foreground">Start downloads from the Downloads page</p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {queueData.active_tasks.map((task: DownloadTask) => (
                 <QueueItem
                   key={task.id}
