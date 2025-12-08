@@ -1,73 +1,185 @@
-# [PROJECT_NAME] Constitution
+<!--
+SYNC IMPACT REPORT
+==================
+Version Change: 0.0.0 → 1.0.0
+Rationale: Initial constitution establishing core architectural principles and governance
 
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+Principles Defined:
+- I. Clean Architecture (NEW)
+- II. Non-Blocking I/O (NEW)
+- III. Minimal Dependencies (NEW)
+- IV. Performance-First (NEW)
+- V. Static Build Distribution (NEW)
+
+Sections Added:
+- Technology Stack (Backend/Frontend requirements)
+- Code Organization Standards (directory structure rules)
+- Development Standards (code quality expectations)
+- Governance (amendment and compliance procedures)
+
+Templates Status:
+✅ plan-template.md - Aligned (supports backend/frontend web app structure)
+✅ spec-template.md - Aligned (supports functional requirements and user stories)
+✅ tasks-template.md - Aligned (supports web app structure with backend/frontend phases)
+
+Follow-up Items:
+- None
+
+Generated: 2025-12-08
+-->
+
+# YouTube Download Full-Stack Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
+### I. Clean Architecture
 
-<!-- Example: I. Library-First -->
+Backend MUST follow layered architecture with clear separation of concerns:
 
-[PRINCIPLE_1_DESCRIPTION]
+- `/models` - Data models and database schemas only
+- `/repository` - Database access layer, no business logic
+- `/services` - Business logic, orchestrates repositories and external services
+- `/routers` - API endpoints, thin controllers delegating to services
 
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+**Rationale**: Maintains code clarity, testability, and scalability. Each layer has a single responsibility and can be tested independently.
 
-### [PRINCIPLE_2_NAME]
+### II. Non-Blocking I/O
 
-<!-- Example: II. CLI Interface -->
+Heavy operations MUST NOT block the main API thread:
 
-[PRINCIPLE_2_DESCRIPTION]
+- All download operations MUST use Huey task queue
+- Check database for existing downloads BEFORE enqueueing tasks
+- yt-dlp execution MUST run asynchronously via Huey
+- API endpoints MUST return immediately with task status
 
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+**Rationale**: Ensures API responsiveness and enables horizontal scaling. Users get instant feedback while operations complete in the background.
 
-### [PRINCIPLE_3_NAME]
+### III. Minimal Dependencies
 
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
+Code MUST prioritize simplicity and minimal external dependencies:
 
-[PRINCIPLE_3_DESCRIPTION]
+- Only use libraries that solve critical problems
+- Prefer standard library solutions when performance is acceptable
+- Document justification for each non-trivial dependency
+- Frontend MUST use only: React, TypeScript, Vite, Shadcn, Axios
 
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Rationale**: Reduces maintenance burden, security surface area, and build complexity. Easier to understand and debug.
 
-### [PRINCIPLE_4_NAME]
+### IV. Performance-First
 
-<!-- Example: IV. Integration Testing -->
+System MUST prioritize performance and stability:
 
-[PRINCIPLE_4_DESCRIPTION]
+- Database queries MUST be indexed appropriately
+- API responses MUST be under 200ms for read operations (excluding downloads)
+- Memory usage MUST remain predictable under load
+- Task queue MUST handle failures gracefully with retries
+- Frontend MUST render smoothly without blocking UI thread
 
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+**Rationale**: User experience depends on responsiveness. Performance issues are harder to fix later than to prevent early.
 
-### [PRINCIPLE_5_NAME]
+### V. Static Build Distribution
 
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
+Frontend build MUST be fully self-contained:
 
-[PRINCIPLE_5_DESCRIPTION]
+- Vite MUST produce `dist/` folder with all assets bundled
+- Built application MUST run on any HTTP server without node_modules
+- No runtime dependencies on Node.js or build tools
+- Configuration MUST be injectable at runtime (environment variables or config file)
 
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+**Rationale**: Enables simple deployment, portability across servers, and easy distribution. Separates build-time from runtime concerns.
 
-## [SECTION_2_NAME]
+## Technology Stack
 
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### Backend Requirements
 
-[SECTION_2_CONTENT]
+- **Framework**: FastAPI for REST API
+- **Database**: SQLite for channels, download history, and task status
+- **Task Queue**: Huey with SQLite backend (integrated, no separate process)
+- **Download Tool**: yt-dlp for YouTube video downloads
+- **Python Version**: 3.10 or higher
 
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### Frontend Requirements
 
-## [SECTION_3_NAME]
+- **Framework**: React 18+ with TypeScript
+- **Build Tool**: Vite for fast builds and HMR
+- **UI Library**: Shadcn components
+- **HTTP Client**: Axios for API communication
+- **Package Manager**: pnpm (as evidenced by pnpm-lock.yaml)
 
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Code Organization Standards
 
-[SECTION_3_CONTENT]
+### Backend Structure
 
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+```
+backend/
+├── models/          # SQLAlchemy models, Pydantic schemas
+├── repository/      # Database access layer (CRUD operations)
+├── services/        # Business logic (download orchestration, channel management)
+├── routers/         # FastAPI route handlers
+├── tasks/           # Huey task definitions
+├── utils/           # Helper functions, constants
+└── main.py          # Application entry point, Huey integration
+```
+
+### Frontend Structure
+
+```
+web/
+├── src/
+│   ├── components/  # Reusable UI components
+│   ├── pages/       # Page-level components (channel list, history, queue status)
+│   ├── services/    # API client functions (axios wrappers)
+│   ├── types/       # TypeScript type definitions
+│   └── utils/       # Helper functions
+├── public/          # Static assets
+└── dist/            # Build output (generated)
+```
+
+## Development Standards
+
+### Code Quality
+
+- Code MUST be self-documenting with clear naming
+- Complex logic MUST include explanatory comments
+- API endpoints MUST have Pydantic request/response models
+- TypeScript MUST have strict mode enabled
+- No `any` types except when absolutely necessary with justification
+
+### Error Handling
+
+- All exceptions MUST be caught and logged
+- API errors MUST return appropriate HTTP status codes
+- Task failures MUST be logged with full context
+- User-facing errors MUST be clear and actionable
+
+### Security
+
+- API MUST validate all inputs
+- Database queries MUST use parameterized statements (SQLAlchemy ORM)
+- File paths MUST be sanitized
+- CORS MUST be configured appropriately for Chrome extension integration
 
 ## Governance
 
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+This constitution supersedes all other development practices and preferences.
 
-[GOVERNANCE_RULES]
+**Amendment Process**:
 
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+1. Proposed changes MUST be documented with rationale
+2. Impact on existing code MUST be assessed
+3. Migration plan MUST be created if breaking changes
+4. Version MUST be bumped according to semantic versioning
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
+**Compliance**:
 
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+- All code reviews MUST verify constitutional compliance
+- Architectural deviations MUST be explicitly justified in PR description
+- Template files (plan, spec, tasks) MUST align with constitution
+
+**Versioning**:
+
+- MAJOR: Principle removed/redefined, breaking governance changes
+- MINOR: New principle added, section expanded
+- PATCH: Clarifications, wording improvements, non-semantic changes
+
+**Version**: 1.0.0 | **Ratified**: 2025-12-08 | **Last Amended**: 2025-12-08
