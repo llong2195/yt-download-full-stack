@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { Plus, RefreshCw } from "lucide-react";
 import type { Channel } from "@/types/channel";
 import {
   fetchChannels,
@@ -11,7 +12,16 @@ import {
 } from "@/services/channelApi";
 import { ApiError } from "@/services/api";
 import ChannelList from "@/components/ChannelList";
-import "./Channels.css";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function Channels() {
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -99,50 +109,90 @@ export default function Channels() {
   };
 
   return (
-    <div className="channels-page">
-      <header className="page-header">
-        <h1>YouTube Channels</h1>
-        <p>Manage the YouTube channels you want to download from</p>
-      </header>
+    <div className="container mx-auto py-8 px-4 max-w-7xl">
+      <div className="space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">
+            YouTube Channels
+          </h1>
+          <p className="text-muted-foreground mt-2">
+            Manage the YouTube channels you want to download from
+          </p>
+        </div>
 
-      {/* Add Channel Form */}
-      <section className="add-channel-section">
-        <form onSubmit={handleAddChannel} className="add-channel-form">
-          <input
-            type="text"
-            placeholder="Enter YouTube channel URL (e.g., https://www.youtube.com/@channel)"
-            value={newChannelUrl}
-            onChange={(e) => setNewChannelUrl(e.target.value)}
-            disabled={addingChannel}
-            className="channel-url-input"
-          />
-          <button type="submit" disabled={addingChannel} className="add-button">
-            {addingChannel ? "Adding..." : "Add Channel"}
-          </button>
-        </form>
+        {/* Add Channel Form */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Add New Channel</CardTitle>
+            <CardDescription>
+              Enter a YouTube channel URL to start downloading videos
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAddChannel} className="flex gap-2">
+              <Input
+                type="text"
+                placeholder="https://www.youtube.com/@channel"
+                value={newChannelUrl}
+                onChange={(e) => setNewChannelUrl(e.target.value)}
+                disabled={addingChannel}
+                className="flex-1"
+              />
+              <Button type="submit" disabled={addingChannel}>
+                {addingChannel ? (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Channel
+                  </>
+                )}
+              </Button>
+            </form>
 
-        {addError && <div className="error-message">{addError}</div>}
-      </section>
+            {addError && (
+              <Alert variant="destructive" className="mt-4">
+                <AlertDescription>{addError}</AlertDescription>
+              </Alert>
+            )}
+          </CardContent>
+        </Card>
 
-      {/* Channel List */}
-      <section className="channels-section">
-        {loading && <div className="loading">Loading channels...</div>}
+        {/* Channel List */}
+        <div>
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-muted-foreground">
+                Loading channels...
+              </span>
+            </div>
+          )}
 
-        {error && (
-          <div className="error-message">
-            {error}
-            <button onClick={loadChannels}>Retry</button>
-          </div>
-        )}
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription className="flex items-center justify-between">
+                <span>{error}</span>
+                <Button variant="outline" size="sm" onClick={loadChannels}>
+                  Retry
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
 
-        {!loading && !error && (
-          <ChannelList
-            channels={channels}
-            onDeleteChannel={handleDeleteChannel}
-            deletingId={deletingId}
-          />
-        )}
-      </section>
+          {!loading && !error && (
+            <ChannelList
+              channels={channels}
+              onDeleteChannel={handleDeleteChannel}
+              deletingId={deletingId}
+            />
+          )}
+        </div>
+      </div>
     </div>
   );
 }

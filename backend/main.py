@@ -74,11 +74,11 @@ async def health_check():
 
 
 # Register routers
-from routers import channels
+from routers import channels, downloads
 
 app.include_router(channels.router, prefix="/api/channels", tags=["channels"])
+app.include_router(downloads.router, prefix="/api/downloads", tags=["downloads"])
 
 # TODO: Register remaining routers
-# app.include_router(downloads.router, prefix="/api/downloads", tags=["downloads"])
 # app.include_router(queue.router, prefix="/api/queue", tags=["queue"])
 # app.include_router(history.router, prefix="/api/history", tags=["history"])

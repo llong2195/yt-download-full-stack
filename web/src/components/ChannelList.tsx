@@ -18,14 +18,19 @@ export default function ChannelList({
 }: ChannelListProps) {
   if (channels.length === 0) {
     return (
-      <div className="empty-state">
-        <p>No channels yet. Add a YouTube channel to get started!</p>
+      <div className="flex items-center justify-center py-12 text-center">
+        <div className="space-y-2">
+          <p className="text-muted-foreground">No channels yet.</p>
+          <p className="text-sm text-muted-foreground">
+            Add a YouTube channel to get started!
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="channel-list">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {channels.map((channel) => (
         <ChannelCard
           key={channel.id}

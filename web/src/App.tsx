@@ -3,33 +3,53 @@
  */
 
 import { BrowserRouter, Routes, Route, Link } from "react-router";
+import { Youtube } from "lucide-react";
 import Channels from "./pages/Channels";
-import "./App.css";
+import Downloads from "./pages/Downloads";
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="app">
-        <nav className="navbar">
-          <div className="nav-brand">
-            <h1>YouTube Downloader</h1>
+      <div className="min-h-screen flex flex-col">
+        {/* Navigation */}
+        <nav className="border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+          <div className="container mx-auto px-4">
+            <div className="flex h-16 items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Youtube className="h-6 w-6 text-primary" />
+                <h1 className="text-xl font-bold">YouTube Downloader</h1>
+              </div>
+              <ul className="flex items-center gap-6">
+                <li>
+                  <Link
+                    to="/"
+                    className="text-sm font-medium transition-colors hover:text-primary"
+                  >
+                    Channels
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    to="/downloads"
+                    className="text-sm font-medium transition-colors hover:text-primary"
+                  >
+                    Downloads
+                  </Link>
+                </li>
+                {/* TODO: Add Queue and History links */}
+                {/* <li><Link to="/queue">Queue</Link></li> */}
+                {/* <li><Link to="/history">History</Link></li> */}
+              </ul>
+            </div>
           </div>
-          <ul className="nav-links">
-            <li>
-              <Link to="/">Channels</Link>
-            </li>
-            {/* TODO: Add more navigation links */}
-            {/* <li><Link to="/downloads">Downloads</Link></li> */}
-            {/* <li><Link to="/queue">Queue</Link></li> */}
-            {/* <li><Link to="/history">History</Link></li> */}
-          </ul>
         </nav>
 
-        <main className="main-content">
+        {/* Main Content */}
+        <main className="flex-1 bg-background">
           <Routes>
             <Route path="/" element={<Channels />} />
-            {/* TODO: Add more routes */}
-            {/* <Route path="/downloads" element={<Downloads />} /> */}
+            <Route path="/downloads" element={<Downloads />} />
+            {/* TODO: Add Queue and History routes */}
             {/* <Route path="/queue" element={<Queue />} /> */}
             {/* <Route path="/history" element={<History />} /> */}
           </Routes>
