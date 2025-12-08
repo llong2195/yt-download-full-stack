@@ -98,7 +98,7 @@ export function HistoryItem({ history, channelName }: HistoryItemProps) {
             <HardDrive className={`h-4 w-4 ${statusColor}`} />
             <div>
               <div className="text-xs text-muted-foreground">File Size</div>
-              <div className="font-medium">{formatFileSize(history.file_size)}</div>
+              <div className="font-medium">{formatFileSize(history.file_size ?? null)}</div>
             </div>
           </div>
 
@@ -107,7 +107,7 @@ export function HistoryItem({ history, channelName }: HistoryItemProps) {
             <Clock className={`h-4 w-4 ${statusColor}`} />
             <div>
               <div className="text-xs text-muted-foreground">Duration</div>
-              <div className="font-medium">{formatDuration(history.duration)}</div>
+              <div className="font-medium">{formatDuration(history.duration ?? null)}</div>
             </div>
           </div>
 

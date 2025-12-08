@@ -6,7 +6,7 @@
  * Format file size to human-readable format
  */
 export function formatFileSize(bytes: number | null | undefined): string {
-  if (!bytes || bytes === 0) return '0 B';
+  if (bytes === null || bytes === undefined || bytes === 0) return '0 B';
   
   const units = ['B', 'KB', 'MB', 'GB', 'TB'];
   let size = bytes;
@@ -24,7 +24,7 @@ export function formatFileSize(bytes: number | null | undefined): string {
  * Format duration in seconds to HH:MM:SS or MM:SS
  */
 export function formatDuration(seconds: number | null | undefined): string {
-  if (!seconds || seconds === 0) return '0:00';
+  if (seconds === null || seconds === undefined || seconds === 0) return '0:00';
   
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);

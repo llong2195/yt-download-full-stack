@@ -2,24 +2,24 @@
  * History page - Browse download history with search and filters
  */
 
-import { useState, useEffect } from 'react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Download,
+  Filter,
+  HardDrive,
+  History as HistoryIcon,
+  RefreshCw,
+  Search,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { HistoryItem } from '../components/HistoryItem';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Input } from '../components/ui/input';
-import { Button } from '../components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { Badge } from '../components/ui/badge';
-import { 
-  History as HistoryIcon, 
-  Search, 
-  Filter, 
-  Download, 
-  CheckCircle2, 
-  AlertCircle,
-  HardDrive,
-  Clock,
-  RefreshCw,
-} from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Input } from '../components/ui/input';
 import { fetchHistory, fetchHistoryStats, type HistoryFilters } from '../services/historyApi';
 import type { DownloadHistory, HistoryStatsResponse } from '../types/download';
 import { formatFileSize } from '../utils/formatters';
@@ -166,24 +166,13 @@ export default function History() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{stats.total}</div>
+                <div className="text-3xl font-bold">{stats.total_downloads}</div>
                 <div className="text-xs text-muted-foreground mt-1">
-                  {stats.successful} successful
+                  {stats.successful_downloads} successful
                 </div>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  Success Rate
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{stats.success_rate}%</div>
-              </CardContent>
-            </Card>
+ 
 
             <Card>
               <CardHeader className="pb-2">
@@ -193,7 +182,7 @@ export default function History() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold">{formatFileSize(stats.total_size)}</div>
+                <div className="text-3xl font-bold">{formatFileSize(stats.total_size_bytes)}</div>
               </CardContent>
             </Card>
 
@@ -203,15 +192,7 @@ export default function History() {
                   <Clock className="h-4 w-4 text-orange-600" />
                   Avg Download Time
                 </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold">{stats.avg_download_time}s</div>
-                {stats.most_downloaded_channel && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Top: {stats.most_downloaded_channel}
-                  </div>
-                )}
-              </CardContent>
+              </CardHeader> 
             </Card>
           </div>
         </div>

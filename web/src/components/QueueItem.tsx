@@ -2,7 +2,7 @@
  * QueueItem component - Display individual download task with status
  */
 
-import { DownloadTask } from '../types/download';
+import type { DownloadTask } from '../types/download';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Progress } from './ui/progress';

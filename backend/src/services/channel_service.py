@@ -3,13 +3,15 @@
 import os
 from pathlib import Path
 from typing import Dict, Optional
-import yt_dlp
 
+import yt_dlp
+from sqlalchemy import func
 from sqlalchemy.orm import Session
+from src.models.download_history import DownloadHistory
 from src.repository import channel_repo
-from src.utils.validators import is_youtube_url, extract_channel_id, sanitize_filename
 from src.utils.config import settings
 from src.utils.logger import get_logger
+from src.utils.validators import extract_channel_id, is_youtube_url, sanitize_filename
 
 logger = get_logger(__name__)
 
@@ -170,9 +172,6 @@ def get_all_channels_with_stats(db: Session):
     Returns:
         List of channels with video counts
     """
-    from models.download_history import DownloadHistory
-    from sqlalchemy import func
-
     channels = channel_repo.get_all_channels(db)
     result = []
 
@@ -182,7 +181,7 @@ def get_all_channels_with_stats(db: Session):
             db.query(func.count(DownloadHistory.id))
             .filter(
                 DownloadHistory.channel_id == channel.id,
-                DownloadHistory.success == True,
+                DownloadHistory.success ,
             )
             .scalar()
         )
