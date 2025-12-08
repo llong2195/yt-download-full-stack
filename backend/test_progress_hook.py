@@ -23,7 +23,7 @@ class MockTask:
 
 
 # Create mock progress tracker
-progress = DownloadProgress("test-task-id", MockDB())
+progress = DownloadProgress("test-task-id", MockDB())  # type: ignore
 
 # Simulate yt-dlp progress callbacks with ANSI codes
 test_progress_data = [
