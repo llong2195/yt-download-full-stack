@@ -32,7 +32,9 @@ def get_channel_by_id(db: Session, channel_id: int) -> Optional[Channel]:
     return db.query(Channel).filter(Channel.id == channel_id).first()
 
 
-def get_channel_by_youtube_id(db: Session, youtube_channel_id: str) -> Optional[Channel]:
+def get_channel_by_youtube_id(
+    db: Session, youtube_channel_id: str
+) -> Optional[Channel]:
     """Get channel by YouTube channel ID.
 
     Args:

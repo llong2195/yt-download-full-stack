@@ -58,7 +58,7 @@ def extract_video_metadata(video_url: str) -> Dict:
         ydl_opts: yt_dlp._Params = {
             "quiet": True,
             "no_warnings": True,
-            "skip_download": 'True',
+            "skip_download": "True",
             "extract_flat": False,
         }
 
@@ -76,13 +76,16 @@ def extract_video_metadata(video_url: str) -> Dict:
             # Get channel information
             channel_id = info.get("channel_id")
             channel_name = info.get("channel") or info.get("uploader")
-            channel_url = info.get("channel_url") or f"https://www.youtube.com/channel/{channel_id}"
+            channel_url = (
+                info.get("channel_url")
+                or f"https://www.youtube.com/channel/{channel_id}"
+            )
 
             # Get video information
             title = info.get("title", "Unknown Title")
             duration = info.get("duration")  # in seconds
             upload_date = info.get("upload_date")  # YYYYMMDD format
-            
+
             # Parse upload_date to datetime string
             upload_date_str = None
             if upload_date:

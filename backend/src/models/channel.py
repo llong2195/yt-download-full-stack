@@ -15,12 +15,18 @@ class Channel(Base):
     __tablename__ = "channels"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    channel_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    channel_id: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
     name: Mapped[str] = mapped_column(String(500), nullable=False)
     url: Mapped[str] = mapped_column(String(1000), nullable=False)
     download_path: Mapped[str] = mapped_column(String(2000), nullable=False)
-    date_added: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now(), index=True)
-    last_updated: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    date_added: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, server_default=func.now(), index=True
+    )
+    last_updated: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     def __repr__(self):
-        return f"<Channel(id={self.id}, name={self.name}, channel_id={self.channel_id})>"
+        return (
+            f"<Channel(id={self.id}, name={self.name}, channel_id={self.channel_id})>"
+        )

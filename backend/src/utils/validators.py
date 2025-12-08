@@ -112,7 +112,7 @@ def sanitize_filename(filename: str) -> str:
     # Limit length
     if len(filename) > 200:
         name, ext = filename.rsplit(".", 1) if "." in filename else (filename, "")
-        filename = name[:200 - len(ext) - 1] + "." + ext if ext else name[:200]
+        filename = name[: 200 - len(ext) - 1] + "." + ext if ext else name[:200]
 
     return filename.strip()
 

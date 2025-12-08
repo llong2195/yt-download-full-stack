@@ -122,9 +122,7 @@ async def get_history(
     responses={400: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
 )
 async def get_history_stats(
-    period: str = Query(
-        "all", description="Time period for stats (7d, 30d, 90d, all)"
-    ),
+    period: str = Query("all", description="Time period for stats (7d, 30d, 90d, all)"),
     db: Session = Depends(get_db),
 ):
     """Get download history statistics.
@@ -146,8 +144,10 @@ async def get_history_stats(
 
     try:
         stats = download_repo.get_history_stats(db=db, period=period)
-        return HistoryStatsResponse(**stats )
+        return HistoryStatsResponse(**stats)
 
     except Exception as e:
-        logger.exception(f"Failed to get download history stats: {str(e)}", exc_info=True)
+        logger.exception(
+            f"Failed to get download history stats: {str(e)}", exc_info=True
+        )
         raise HTTPException(status_code=500, detail=str(e))

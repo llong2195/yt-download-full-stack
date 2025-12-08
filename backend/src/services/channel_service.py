@@ -1,10 +1,10 @@
 """Channel service with business logic."""
 
-import os
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict
 
 import yt_dlp
+import yt_dlp.utils
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from src.models.download_history import DownloadHistory
@@ -68,7 +68,9 @@ def extract_channel_info(url: str) -> Dict[str, str]:
 
             # Get channel ID and name
             channel_id = info.get("channel_id") or info.get("id")
-            channel_name = info.get("channel") or info.get("uploader") or info.get("title")
+            channel_name = (
+                info.get("channel") or info.get("uploader") or info.get("title")
+            )
 
             if not channel_id:
                 raise MetadataFetchError("Could not extract channel ID")
@@ -181,21 +183,23 @@ def get_all_channels_with_stats(db: Session):
             db.query(func.count(DownloadHistory.id))
             .filter(
                 DownloadHistory.channel_id == channel.id,
-                DownloadHistory.success ,
+                DownloadHistory.success,
             )
             .scalar()
         )
 
-        result.append({
-            "id": channel.id,
-            "channel_id": channel.channel_id,
-            "name": channel.name,
-            "url": channel.url,
-            "download_path": channel.download_path,
-            "date_added": channel.date_added,
-            "last_updated": channel.last_updated,
-            "video_count": video_count or 0,
-        })
+        result.append(
+            {
+                "id": channel.id,
+                "channel_id": channel.channel_id,
+                "name": channel.name,
+                "url": channel.url,
+                "download_path": channel.download_path,
+                "date_added": channel.date_added,
+                "last_updated": channel.last_updated,
+                "video_count": video_count or 0,
+            }
+        )
 
     return result
 

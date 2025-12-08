@@ -1,6 +1,6 @@
 """Download repository for download tasks and history."""
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List, Optional
 
 from sqlalchemy import and_
@@ -119,17 +119,17 @@ def get_all_active_tasks(db: Session) -> List[DownloadTask]:
 def get_task_with_channel_info(db: Session, task_id: str) -> Optional[dict]:
     """Get task with channel information via JOIN."""
     from src.models.channel import Channel
-    
+
     result = (
         db.query(DownloadTask, Channel)
         .join(Channel, DownloadTask.channel_id == Channel.id)
         .filter(DownloadTask.task_id == task_id)
         .first()
     )
-    
+
     if not result:
         return None
-    
+
     task, channel = result
     return {
         "task": task,
@@ -255,16 +255,14 @@ def get_history_with_filters(
 
     # Apply filters
     if search:
-        query = query.filter(
-            DownloadHistory.video_title.ilike(f"%{search}%")
-        )
-    
+        query = query.filter(DownloadHistory.video_title.ilike(f"%{search}%"))
+
     if date_from:
         query = query.filter(DownloadHistory.download_date >= date_from)
-    
+
     if date_to:
         query = query.filter(DownloadHistory.download_date <= date_to)
-    
+
     if success is not None:
         query = query.filter(DownloadHistory.success == success)
 
@@ -298,12 +296,11 @@ def get_history_stats(db: Session, period: str = "all") -> dict:
     # Calculate date filter based on period
     date_filter = None
     if period == "7d":
-        date_filter = datetime.now() - datetime.timedelta(days=7)
+        date_filter = datetime.now() - timedelta(days=7)
     elif period == "30d":
-        date_filter = datetime.now() - datetime.timedelta(days=30)
+        date_filter = datetime.now() - timedelta(days=30)
     elif period == "90d":
-        date_filter = datetime.now() - datetime.timedelta(days=90)
-
+        date_filter = datetime.now() - timedelta(days=90)
     # Base query
     query = db.query(DownloadHistory)
     if date_filter:

@@ -87,7 +87,9 @@ async def request_batch_download_by_urls(
         )
 
 
-@router.post("", response_model=DownloadTaskResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=DownloadTaskResponse, status_code=status.HTTP_201_CREATED
+)
 async def request_single_download(
     request: DownloadRequest,
     db: Session = Depends(get_db),
