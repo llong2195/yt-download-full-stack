@@ -285,11 +285,7 @@ export default function Channels() {
                     <option value="en">English</option>
                     <option value="ja">Japanese</option>
                     <option value="ko">Korean</option>
-                    <option value="zh">Chinese</option>
                     <option value="vi">Vietnamese</option>
-                    <option value="es">Spanish</option>
-                    <option value="fr">French</option>
-                    <option value="de">German</option>
                   </select>
                 </div>
 
@@ -448,11 +444,7 @@ export default function Channels() {
                   <option value="en">English</option>
                   <option value="ja">Japanese</option>
                   <option value="ko">Korean</option>
-                  <option value="zh">Chinese</option>
                   <option value="vi">Vietnamese</option>
-                  <option value="es">Spanish</option>
-                  <option value="fr">French</option>
-                  <option value="de">German</option>
                 </select>
               </div>
 
