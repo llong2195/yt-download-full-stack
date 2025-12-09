@@ -3,8 +3,9 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from sqlalchemy import and_
+from sqlalchemy import and_, func
 from sqlalchemy.orm import Session
+from src.models.channel import Channel
 from src.models.download_history import DownloadHistory
 from src.models.download_task import DownloadTask
 
@@ -118,8 +119,6 @@ def get_all_active_tasks(db: Session) -> List[DownloadTask]:
 
 def get_task_with_channel_info(db: Session, task_id: str) -> Optional[dict]:
     """Get task with channel information via JOIN."""
-    from src.models.channel import Channel
-
     result = (
         db.query(DownloadTask, Channel)
         .join(Channel, DownloadTask.channel_id == Channel.id)
@@ -246,8 +245,6 @@ def get_history_with_filters(
     Returns:
         Tuple of (history records, total count)
     """
-    from src.models.channel import Channel
-
     # Build query with JOIN to Channel to get channel name
     query = db.query(DownloadHistory).join(
         Channel, DownloadHistory.channel_id == Channel.id
@@ -288,11 +285,8 @@ def get_history_stats(db: Session, period: str = "all") -> dict:
         period: Time period for stats (7d, 30d, 90d, all)
 
     Returns:
-        Dictionary with stats: total, success_rate, total_size, avg_time, most_downloaded_channel
+        Dictionary with stats matching HistoryStatsResponse schema
     """
-    from src.models.channel import Channel
-    from sqlalchemy import func
-
     # Calculate date filter based on period
     date_filter = None
     if period == "7d":
@@ -301,6 +295,7 @@ def get_history_stats(db: Session, period: str = "all") -> dict:
         date_filter = datetime.now() - timedelta(days=30)
     elif period == "90d":
         date_filter = datetime.now() - timedelta(days=90)
+    
     # Base query
     query = db.query(DownloadHistory)
     if date_filter:
@@ -309,12 +304,20 @@ def get_history_stats(db: Session, period: str = "all") -> dict:
     # Get all stats
     total = query.count()
     successful = query.filter(DownloadHistory.success == True).count()
-    success_rate = (successful / total * 100) if total > 0 else 0.0
+    failed = total - successful
 
     # Total size (sum of file_size where not null)
     total_size = (
         query.filter(DownloadHistory.file_size.isnot(None))
         .with_entities(func.sum(DownloadHistory.file_size))
+        .scalar()
+        or 0
+    )
+
+    # Total duration (sum of download_duration_seconds where not null)
+    total_duration = (
+        query.filter(DownloadHistory.download_duration_seconds.isnot(None))
+        .with_entities(func.sum(DownloadHistory.download_duration_seconds))
         .scalar()
         or 0
     )
@@ -327,26 +330,11 @@ def get_history_stats(db: Session, period: str = "all") -> dict:
         or 0.0
     )
 
-    # Most downloaded channel
-    most_downloaded = (
-        query.join(Channel, DownloadHistory.channel_id == Channel.id)
-        .filter(DownloadHistory.success == True)
-        .with_entities(
-            Channel.name,
-            func.count(DownloadHistory.id).label("download_count"),
-        )
-        .group_by(Channel.name)
-        .order_by(func.count(DownloadHistory.id).desc())
-        .first()
-    )
-
-    most_downloaded_channel = most_downloaded[0] if most_downloaded else None
-
     return {
-        "total": total,
-        "successful": successful,
-        "success_rate": round(success_rate, 2),
-        "total_size": total_size,
-        "avg_download_time": round(float(avg_time), 2),
-        "most_downloaded_channel": most_downloaded_channel,
+        "total_downloads": total,
+        "successful_downloads": successful,
+        "failed_downloads": failed,
+        "total_size_bytes": int(total_size),
+        "total_duration_seconds": int(total_duration),
+        "average_download_time_seconds": round(float(avg_time), 2),
     }

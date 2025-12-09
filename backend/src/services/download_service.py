@@ -118,8 +118,6 @@ def request_download(
     )
 
     # Enqueue download task with Huey
-    from src.tasks.download_tasks import download_video
-
     download_video(task.id)
 
     logger.info(f"Download requested for video {video_id} (task {task_id})")

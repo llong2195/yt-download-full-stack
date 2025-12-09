@@ -8,10 +8,17 @@ import yt_dlp.utils
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from src.models.download_history import DownloadHistory
-from src.repository import channel_repo
+from src.repository import channel_repo, settings_repo
 from src.utils.config import settings
 from src.utils.logger import get_logger
-from src.utils.validators import extract_channel_id, is_youtube_url, sanitize_filename
+from src.utils.validators import (
+    extract_channel_id,
+    is_youtube_url,
+    sanitize_filename,
+    validate_download_path,
+    validate_subtitle_language,
+    validate_video_quality,
+)
 
 logger = get_logger(__name__)
 
@@ -183,13 +190,6 @@ def validate_and_add_channel(
         ValidationError: If validation fails
         MetadataFetchError: If metadata cannot be fetched
     """
-    from src.repository import settings_repo
-    from src.utils.validators import (
-        validate_download_path,
-        validate_subtitle_language,
-        validate_video_quality,
-    )
-
     # Validate URL format
     if not is_youtube_url(url, "channel"):
         raise InvalidChannelURLError("Invalid YouTube channel URL")
@@ -300,12 +300,6 @@ def update_channel(
         DuplicateNameError: If new name already exists
         ValidationError: If validation fails
     """
-    from src.utils.validators import (
-        validate_download_path,
-        validate_subtitle_language,
-        validate_video_quality,
-    )
-
     # Get existing channel
     channel = channel_repo.get_channel_by_id(db, channel_id)
     if not channel:

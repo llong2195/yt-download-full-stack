@@ -11,7 +11,7 @@ import yt_dlp.utils
 from sqlalchemy.orm import Session
 from src.models.database import SessionLocal
 from src.models.download_task import DownloadTask
-from src.repository import channel_repo, download_repo
+from src.repository import channel_repo, download_repo, settings_repo
 from src.utils.logger import get_logger
 from src.utils.validators import sanitize_filename
 
@@ -123,7 +123,6 @@ def download_video(task_id: str) -> bool:
             return False
 
         # Get global settings for fallback chain
-        from src.repository import settings_repo
         global_settings = settings_repo.get_settings(db)
 
         # Determine effective subtitle language (channel → global → None)
