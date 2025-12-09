@@ -5,6 +5,16 @@
 **Status**: Draft  
 **Input**: User description: "setting chung - nơi download mặc định nếu channel không có setting ( ./download ) - ngôn ngữ mặc định nếu channel không có setting -- Channel ( Kênh ) - thay thế trường name -> title ( tên của kênh ) - thêm trường name: tên do mình điền vào - mỗi channel có một download_path: (mặc định : setting_download_path + name) - Khi tải video file_name: {index}_{title_video}.{định dạng} ( index theo định dạng 0001 -> tăng dần 0002 ) để windown dễ sắp xếp - mỗi channel chọn một ngôn ngữ để đi kèm khi download: ja, vn, ... - cho chọn chất lượng tải xuống khi thêm/sửa channel"
 
+## Clarifications
+
+### Session 2025-12-09
+
+- Q: How should global settings be stored? → A: Database table with a single row (id=1) that's always present
+- Q: Should duplicate custom channel names be allowed? → A: No - Enforce unique constraint on custom names (reject duplicates with error)
+- Q: How should the system handle concurrent downloads from the same channel to prevent index number conflicts? → A: Database transaction with row-level lock on Channel record during index assignment
+- Q: Where in the UI should users access global settings configuration? → A: Settings page with dedicated section
+- Q: What maximum filename length should trigger title truncation to stay within filesystem limits? → A: no limit
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Configure Global Download Defaults (Priority: P2)
@@ -18,8 +28,8 @@ An administrator wants to set system-wide default settings for all new channels 
 **Acceptance Scenarios**:
 
 1. **Given** no global settings exist, **When** the system needs to download a video for a channel without specific settings, **Then** system uses hardcoded defaults (download path: ./download, language: none)
-2. **Given** administrator configures global default download path to "D:/Videos", **When** a new channel is added without specifying a download path, **Then** the channel's download path defaults to "D:/Videos/{channel-name}"
-3. **Given** administrator configures global default subtitle language to "en", **When** a new channel is added without specifying a language, **Then** downloads for that channel include English subtitles by default
+2. **Given** user navigates to Settings page, **When** they configure global default download path to "D:/Videos" and save, **Then** new channels added afterwards default to "D:/Videos/{channel-name}"
+3. **Given** user sets global default subtitle language to "en" in Settings page, **When** a new channel is added without specifying a language, **Then** downloads for that channel include English subtitles by default
 
 ---
 
@@ -95,10 +105,10 @@ A user wants to set preferred video quality for each channel so high-quality con
 
 ### Edge Cases
 
-- What happens when a custom channel name conflicts with an existing channel's custom name? System should either prevent duplicates or allow duplicates with a warning.
+- What happens when a custom channel name conflicts with an existing channel's custom name? System must reject the addition/update with a clear error message indicating the name is already in use, and require user to choose a different name.
 - What happens when the download path specified in settings doesn't exist or is not writable? System should create the directory if possible, or fail gracefully with a clear error message.
-- What happens when calculating the next index for video numbering and multiple downloads happen simultaneously? System must ensure unique sequential numbers without conflicts.
-- What happens when a video title is extremely long (e.g., 300 characters)? System should truncate the title in the filename to avoid filesystem path length limits while preserving the index.
+- What happens when calculating the next index for video numbering and multiple downloads happen simultaneously? System uses database transaction with row-level lock on the Channel record to atomically read and increment last_video_index, ensuring unique sequential numbers without conflicts.
+- What happens when a video title is extremely long (e.g., 300 characters)? System does not truncate video titles; if the resulting full path exceeds OS filesystem limits, the download will fail with an error message advising the user to shorten the channel's custom name or download path.
 - What happens when changing a channel's custom name after videos have already been downloaded to a path containing the old name? Existing videos remain in the old path; new downloads use the new path (or optionally, system could offer to migrate).
 - What happens when a channel is deleted but videos have been downloaded to its custom path? Videos remain on disk but are no longer associated with the channel in the system.
 - What happens when subtitle language code is invalid or not recognized by the download system? System should validate language codes on input and reject invalid ones.
@@ -114,6 +124,8 @@ A user wants to set preferred video quality for each channel so high-quality con
 - **FR-002**: System MUST use "./download" as the hardcoded fallback download path when no global or channel-specific path is configured
 - **FR-003**: System MUST use no subtitle language (null/empty) as the hardcoded fallback when no global or channel-specific language is configured
 - **FR-004**: System MUST allow administrators to view and modify global default settings
+- **FR-004a**: Global settings MUST be accessible through a dedicated Settings page (separate from channel management)
+- **FR-004b**: Settings page MUST include a clearly labeled section for global download defaults
 - **FR-005**: Global settings MUST be persisted and loaded on system restart
 
 #### Channel Properties
@@ -121,6 +133,8 @@ A user wants to set preferred video quality for each channel so high-quality con
 - **FR-006**: System MUST store both "title" (original YouTube channel name) and "name" (user-provided custom name) for each channel
 - **FR-007**: The "title" field MUST be automatically populated from YouTube channel metadata and updated periodically
 - **FR-008**: The "name" field MUST be provided by the user when adding a channel and be editable at any time
+- **FR-008a**: The "name" field MUST be unique across all channels (enforced by database unique constraint)
+- **FR-008b**: System MUST reject channel creation or updates that would result in duplicate custom names with a clear error message
 - **FR-009**: Each channel MUST have a configurable download_path that defaults to {global_download_path}/{channel_custom_name} if not explicitly set
 - **FR-010**: Each channel MUST have a configurable subtitle language preference (optional, inherits from global default if not set)
 - **FR-011**: Each channel MUST have a configurable video quality preference (optional, inherits from global default if not set)
@@ -133,7 +147,10 @@ A user wants to set preferred video quality for each channel so high-quality con
 - **FR-015**: When index exceeds 9999, system MUST expand to 5 digits (10000, 10001, etc.) to maintain sort order
 - **FR-016**: The video_title component MUST be sanitized to remove or replace filesystem-unsafe characters (e.g., : / \ * ? " < > |)
 - **FR-017**: System MUST track the highest index used for each channel to ensure sequential numbering
-- **FR-018**: If video title length would cause the full path to exceed filesystem limits (typically 255 characters for filename), system MUST truncate the title while preserving the index and extension
+- **FR-017a**: System MUST use database transactions with row-level locking on the Channel record when assigning index numbers to prevent conflicts during concurrent downloads
+- **FR-017b**: Index assignment MUST be atomic: read current last_video_index, increment, update Channel record, all within a single transaction
+- **FR-018**: System MUST NOT truncate video titles in filenames; full title is always preserved in the format {index}_{video_title}.{extension}
+- **FR-018a**: If the complete file path (directory + filename) exceeds OS filesystem limits, system MUST fail the download with a clear error message indicating path length issue and suggesting to shorten the channel name or download path
 
 #### Channel Management UI
 
@@ -155,7 +172,8 @@ A user wants to set preferred video quality for each channel so high-quality con
 
 ### Key Entities
 
-- **GlobalSettings**: Represents system-wide default configuration
+- **GlobalSettings**: Represents system-wide default configuration (stored as database table with single row, id=1)
+  - id: Primary key (always 1)
   - default_download_path: Base directory for downloads (defaults to "./download")
   - default_subtitle_language: Default language code for subtitles (optional)
   - default_video_quality: Default quality setting for downloads (optional)
@@ -163,7 +181,7 @@ A user wants to set preferred video quality for each channel so high-quality con
 - **Channel**: Represents a YouTube channel tracked by the user
   - channel_id: Unique YouTube channel identifier
   - title: Original YouTube channel name (from YouTube API)
-  - name: User-provided custom name for organization
+  - name: User-provided custom name for organization (unique constraint)
   - url: YouTube channel URL
   - download_path: Custom download directory (defaults to {global_path}/{name})
   - subtitle_language: Preferred subtitle language (optional, inherits from global)
