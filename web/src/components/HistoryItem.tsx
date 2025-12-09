@@ -5,12 +5,14 @@
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Alert, AlertDescription } from './ui/alert';
-import { CheckCircle2, XCircle, Calendar, HardDrive, Clock, Download, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, Calendar, HardDrive, Clock, Download, AlertCircle, Languages, Video } from 'lucide-react';
 import type { DownloadHistory } from '../types/download';
 
 interface HistoryItemProps {
   history: DownloadHistory;
   channelName?: string;
+  subtitleLanguage?: string;
+  videoQuality?: string;
 }
 
 /**
@@ -54,7 +56,7 @@ function formatDate(isoString: string): string {
   return new Date(isoString).toLocaleString();
 }
 
-export function HistoryItem({ history, channelName }: HistoryItemProps) {
+export function HistoryItem({ history, channelName, subtitleLanguage, videoQuality }: HistoryItemProps) {
   const StatusIcon = history.success ? CheckCircle2 : XCircle;
   const statusColor = history.success ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400';
   const badgeVariant = history.success ? 'default' : 'destructive';
@@ -72,6 +74,18 @@ export function HistoryItem({ history, channelName }: HistoryItemProps) {
               {channelName && (
                 <Badge variant="outline" className="text-xs">
                   {channelName}
+                </Badge>
+              )}
+              {subtitleLanguage && (
+                <Badge variant="secondary" className="text-xs">
+                  <Languages className="h-3 w-3 mr-1" />
+                  {subtitleLanguage.toUpperCase()}
+                </Badge>
+              )}
+              {videoQuality && (
+                <Badge variant="secondary" className="text-xs">
+                  <Video className="h-3 w-3 mr-1" />
+                  {videoQuality}
                 </Badge>
               )}
               <span className="text-xs text-muted-foreground font-mono">

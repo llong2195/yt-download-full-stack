@@ -11,11 +11,14 @@ import { Button } from '../components/ui/button';
 import { RefreshCw, Download, AlertCircle, CheckCircle2, Clock, XCircle } from 'lucide-react';
 import { fetchQueueStatus, retryTask } from '../services/downloadApi';
 import type { QueueStatusResponse, DownloadTask } from '../types/download';
+import { fetchChannels } from '../services/channelApi';
+import type { Channel } from '../types/channel';
 
 const POLL_INTERVAL = 2500; // 2.5 seconds
 
 export default function Queue() {
   const [queueData, setQueueData] = useState<QueueStatusResponse | null>(null);
+  const [channels, setChannels] = useState<Channel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -56,9 +59,20 @@ export default function Queue() {
     }
   };
 
+  // Load channels for settings display
+  const loadChannels = async () => {
+    try {
+      const response = await fetchChannels();
+      setChannels(response.channels);
+    } catch (err) {
+      console.error('Failed to load channels:', err);
+    }
+  };
+
   // Polling effect
   useEffect(() => {
     fetchQueue(); // Initial fetch
+    loadChannels(); // Load channels once
 
     const intervalId = setInterval(() => {
       fetchQueue();
@@ -187,14 +201,20 @@ export default function Queue() {
             </div>
           ) : (
             <div className="space-y-3">
-              {queueData.active_tasks.map((task: DownloadTask) => (
-                <QueueItem
-                  key={task.id}
-                  task={task}
-                  onRetry={handleRetry}
-                  isRetrying={retryingTasks.has(task.task_id)}
-                />
-              ))}
+              {queueData.active_tasks.map((task: DownloadTask) => {
+                const channel = channels.find((ch) => ch.id === task.channel_id);
+                return (
+                  <QueueItem
+                    key={task.id}
+                    task={task}
+                    channelName={channel?.name}
+                    subtitleLanguage={channel?.subtitle_language}
+                    videoQuality={channel?.video_quality}
+                    onRetry={handleRetry}
+                    isRetrying={retryingTasks.has(task.task_id)}
+                  />
+                );
+              })}
             </div>
           )}
         </CardContent>

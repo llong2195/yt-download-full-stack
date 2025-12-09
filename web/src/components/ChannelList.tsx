@@ -8,12 +8,14 @@ import ChannelCard from "./ChannelCard";
 interface ChannelListProps {
   channels: Channel[];
   onDeleteChannel: (channelId: number) => void;
+  onEditChannel: (channel: Channel) => void;
   deletingId?: number;
 }
 
 export default function ChannelList({
   channels,
   onDeleteChannel,
+  onEditChannel,
   deletingId,
 }: ChannelListProps) {
   if (channels.length === 0) {
@@ -36,6 +38,7 @@ export default function ChannelList({
           key={channel.id}
           channel={channel}
           onDelete={onDeleteChannel}
+          onEdit={onEditChannel}
           isDeleting={deletingId === channel.id}
         />
       ))}

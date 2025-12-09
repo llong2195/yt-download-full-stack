@@ -2,7 +2,7 @@
  * ChannelCard component - displays a single channel with actions
  */
 
-import { Trash2, ExternalLink } from "lucide-react";
+import { Trash2, ExternalLink, Edit } from "lucide-react";
 import type { Channel } from "@/types/channel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,14 @@ import { Button } from "@/components/ui/button";
 interface ChannelCardProps {
   channel: Channel;
   onDelete: (channelId: number) => void;
+  onEdit: (channel: Channel) => void;
   isDeleting?: boolean;
 }
 
 export default function ChannelCard({
   channel,
   onDelete,
+  onEdit,
   isDeleting = false,
 }: ChannelCardProps) {
   return (
@@ -39,15 +41,25 @@ export default function ChannelCard({
               </span>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onDelete(channel.id)}
-            disabled={isDeleting}
-            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onEdit(channel)}
+              className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => onDelete(channel.id)}
+              disabled={isDeleting}
+              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </CardHeader>
       <CardContent>

@@ -2,7 +2,7 @@
  * QueueItem component - Display individual download task with status
  */
 
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, Languages, Video } from 'lucide-react';
 import type { DownloadTask } from '../types/download';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
@@ -13,6 +13,8 @@ import { Progress } from './ui/progress';
 interface QueueItemProps {
   task: DownloadTask;
   channelName?: string;
+  subtitleLanguage?: string;
+  videoQuality?: string;
   onRetry?: (taskId: string) => void;
   isRetrying?: boolean;
 }
@@ -53,7 +55,7 @@ function getStatusColorClass(status: string): string {
   }
 }
 
-export function QueueItem({ task, channelName, onRetry, isRetrying = false }: QueueItemProps) {
+export function QueueItem({ task, channelName, subtitleLanguage, videoQuality, onRetry, isRetrying = false }: QueueItemProps) {
   const showProgress = task.status === 'downloading';
   const canRetry = task.status === 'failed' && task.retry_count < 3;
 
@@ -70,11 +72,23 @@ export function QueueItem({ task, channelName, onRetry, isRetrying = false }: Qu
             <CardTitle className="text-base font-mono truncate">
               {task.video_id}
             </CardTitle>
-            {channelName && (
-              <CardDescription className="text-sm mt-1">
-                Channel: {channelName}
-              </CardDescription>
-            )}
+            <CardDescription className="text-sm mt-1 flex flex-wrap items-center gap-2">
+              {channelName && (
+                <span>Channel: {channelName}</span>
+              )}
+              {subtitleLanguage && (
+                <Badge variant="secondary" className="text-xs">
+                  <Languages className="h-3 w-3 mr-1" />
+                  {subtitleLanguage.toUpperCase()}
+                </Badge>
+              )}
+              {videoQuality && (
+                <Badge variant="secondary" className="text-xs">
+                  <Video className="h-3 w-3 mr-1" />
+                  {videoQuality}
+                </Badge>
+              )}
+            </CardDescription>
           </div>
           <Badge 
             variant={getStatusBadgeVariant(task.status)}

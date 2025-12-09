@@ -23,10 +23,13 @@ import { Input } from '../components/ui/input';
 import { fetchHistory, fetchHistoryStats, type HistoryFilters } from '../services/historyApi';
 import type { DownloadHistory, HistoryStatsResponse } from '../types/download';
 import { formatFileSize } from '../utils/formatters';
+import { fetchChannels } from '../services/channelApi';
+import type { Channel } from '../types/channel';
 
 export default function History() {
   const [history, setHistory] = useState<DownloadHistory[]>([]);
   const [stats, setStats] = useState<HistoryStatsResponse | null>(null);
+  const [channels, setChannels] = useState<Channel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string>('');
   
@@ -81,10 +84,21 @@ export default function History() {
     }
   }, [period]);
 
+  // Load channels for settings display
+  const loadChannels = useCallback(async () => {
+    try {
+      const response = await fetchChannels();
+      setChannels(response.channels);
+    } catch (err) {
+      console.error('Failed to load channels:', err);
+    }
+  }, []);
+
   // Initial load
   useEffect(() => {
     loadHistory();
     loadStats();
+    loadChannels();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -335,9 +349,18 @@ export default function History() {
           ) : (
             <>
               <div className="space-y-4">
-                {history.map((item) => (
-                  <HistoryItem key={item.id} history={item} />
-                ))}
+                {history.map((item) => {
+                  const channel = channels.find((ch) => ch.id === item.channel_id);
+                  return (
+                    <HistoryItem 
+                      key={item.id} 
+                      history={item} 
+                      channelName={channel?.name}
+                      subtitleLanguage={channel?.subtitle_language}
+                      videoQuality={channel?.video_quality}
+                    />
+                  );
+                })}
               </div>
 
               {/* Load More */}

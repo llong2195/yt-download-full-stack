@@ -14,7 +14,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from src.models import Base, engine
-from src.routers import channels, downloads, history, queue, settings
+from src.routers import channels, downloads, history, queue
+from src.routers import settings as settings_router
 from src.tasks.huey_instance import huey
 from src.utils import ffmpeg_installer
 from src.utils.config import settings
@@ -198,4 +199,4 @@ app.include_router(channels.router, prefix="/api/channels", tags=["channels"])
 app.include_router(downloads.router, prefix="/api/downloads", tags=["downloads"])
 app.include_router(queue.router, prefix="/api/queue", tags=["queue"])
 app.include_router(history.router, prefix="/api/history", tags=["history"])
-app.include_router(settings.router, prefix="/api/settings", tags=["settings"])
+app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
