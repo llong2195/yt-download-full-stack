@@ -53,6 +53,26 @@ async def lifespan(app: FastAPI):
     logger.info("Creating database tables...")
     Base.metadata.create_all(bind=engine)
 
+    # Initialize GlobalSettings if not exists
+    logger.info("Checking global settings...")
+    from sqlalchemy.orm import Session
+    from src.models.global_settings import GlobalSettings
+    
+    with Session(engine) as db:
+        global_settings = db.query(GlobalSettings).filter_by(id=1).first()
+        if not global_settings:
+            global_settings = GlobalSettings(
+                id=1,
+                default_download_path="./downloads",
+                default_subtitle_language="en",
+                default_video_quality="best"
+            )
+            db.add(global_settings)
+            db.commit()
+            logger.info("✓ GlobalSettings initialized with defaults")
+        else:
+            logger.info("✓ GlobalSettings already exists")
+
     # Note: Huey consumer can be started separately with: python -m huey.consumer main.huey
     # For development, tasks will be executed synchronously
     logger.info("Huey configured for task execution")
