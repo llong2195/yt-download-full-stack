@@ -89,7 +89,10 @@ def request_download(
     except youtube_service.YouTubeServiceError as e:
         raise DownloadServiceError(f"Failed to fetch video metadata: {str(e)}")
 
+    logger.info(f"Extracted metadata: {metadata}")
+    
     video_id = metadata["video_id"]
+    video_title = metadata["video_title"]
 
     # Check for active download (only prevent if currently downloading)
     active_task = download_repo.get_active_task_for_video(db, video_id)
@@ -110,6 +113,7 @@ def request_download(
         task_id=task_id,
         channel_id=channel_id,
         video_id=video_id,
+        video_title=video_title,
         video_url=video_url,
     )
 
@@ -158,8 +162,14 @@ def request_batch_download_by_urls(
         try:
             # Extract video metadata
             metadata = youtube_service.extract_video_metadata(url)
+            
+            logger.info(f"Extracted metadata: {metadata}")
+            
             video_id = metadata["video_id"]
+            video_title = metadata["video_title"]
             channel_id_str = metadata["channel_id"]
+            channel_name_str = metadata["channel_name"]
+            channel_url = metadata["channel_url"]
 
             # Check for active download (only skip if currently downloading)
             active_task = download_repo.get_active_task_for_video(db, video_id)
@@ -182,11 +192,11 @@ def request_batch_download_by_urls(
                 # Create channel automatically
                 try:
                     channel_info = channel_service.validate_and_add_channel(
-                        db, metadata["channel_url"]
+                        db,channel_url, channel_name_str
                     )
                     channel = channel_repo.get_channel_by_id(db, channel_info["id"])
                 except Exception as e:
-                    logger.error(f"Failed to auto-create channel: {e}")
+                    logger.error(f"Failed to auto-create channel: {e.__traceback__}")
                     results["errors"].append(
                         {
                             "url": url,
@@ -205,6 +215,7 @@ def request_batch_download_by_urls(
                 task_id=task_id,
                 channel_id=channel.id,
                 video_id=video_id,
+                video_title=video_title,
                 video_url=url,
             )
 

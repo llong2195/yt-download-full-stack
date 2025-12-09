@@ -52,12 +52,14 @@ def create_download_task(
     channel_id: int,
     video_id: str,
     video_url: str,
+    video_title: str,
 ) -> DownloadTask:
     """Create a new download task."""
     task = DownloadTask(
         task_id=task_id,
         channel_id=channel_id,
         video_id=video_id,
+        video_title=video_title,
         video_url=video_url,
         status="pending",
         progress_percent=0,

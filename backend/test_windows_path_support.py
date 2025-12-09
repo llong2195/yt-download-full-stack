@@ -75,7 +75,9 @@ try:
     channel_create = ChannelCreate(
         url='https://www.youtube.com/@test',
         name='Test Channel',
-        download_path=r'D:\MMO\TestChannel'
+        download_path=r'D:\MMO\TestChannel',
+        subtitle_language='en',
+        video_quality='1080p'
     )
     print(f'✓ ChannelCreate accepts Windows path: {channel_create.download_path}')
 except Exception as e:
@@ -84,7 +86,10 @@ except Exception as e:
 # Test ChannelUpdate
 try:
     channel_update = ChannelUpdate(
-        download_path=r'D:\MMO\UpdatedPath'
+        download_path=r'D:\MMO\UpdatedPath',
+        subtitle_language=None,
+        video_quality=None,
+        name=None
     )
     print(f'✓ ChannelUpdate accepts Windows path: {channel_update.download_path}')
 except Exception as e:

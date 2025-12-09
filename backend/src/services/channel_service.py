@@ -282,7 +282,7 @@ def update_channel(
     download_path: str | None = None,
     subtitle_language: str | None = None,
     video_quality: str | None = None,
-) -> Dict:
+) -> Dict | None:
     """Update channel settings.
 
     Args:
@@ -342,6 +342,9 @@ def update_channel(
         subtitle_language=subtitle_language,
         video_quality=video_quality,
     )
+    
+    if not updated_channel:
+        return None
 
     if updated_channel:
         logger.info(f"Updated channel: {updated_channel.name} (ID: {channel_id})")

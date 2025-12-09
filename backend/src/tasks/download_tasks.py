@@ -84,7 +84,7 @@ class DownloadProgress:
             logger.info(f"Download finished for task {self.task_id}")
 
 
-@huey.task(retries=3, retry_delay=60)
+@huey.task(retries=3, retry_delay=20)
 def download_video(task_id: str) -> bool:
     """
     Download video from YouTube using yt-dlp.
@@ -154,8 +154,11 @@ def download_video(task_id: str) -> bool:
         download_path = Path(channel.download_path)
         download_path.mkdir(parents=True, exist_ok=True)
 
+        # Use video title as filename (sanitized)
+        video_title = task.video_title
+        base_filename = sanitize_filename(video_title)
+        
         # Prepare output filename with numbering if file exists
-        base_filename = task.video_id
         counter = 0
         final_filename = base_filename
         
@@ -169,6 +172,7 @@ def download_video(task_id: str) -> bool:
             logger.info(f"File exists, trying with number: {final_filename}")
         
         output_template = str(download_path / f"{final_filename}.%(ext)s")
+        logger.info(f"Output filename: {final_filename}.mp4")
 
         # Build format string based on video quality setting
         format_string = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"

@@ -25,7 +25,8 @@ class DownloadTask(Base):
         index=True,
     )
     video_id: Mapped[str] = mapped_column(String(11), nullable=False, index=True)
-    video_url: Mapped[str] = mapped_column(String(1000), nullable=False)
+    video_title: Mapped[str] = mapped_column(String(10000), nullable=False)
+    video_url: Mapped[str] = mapped_column(String(10000), nullable=False)
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, index=True
     )  # pending, downloading, completed, failed
