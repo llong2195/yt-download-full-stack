@@ -13,6 +13,7 @@ import { fetchQueueStatus, retryTask } from '../services/downloadApi';
 import type { QueueStatusResponse, DownloadTask } from '../types/download';
 import { fetchChannels } from '../services/channelApi';
 import type { Channel } from '../types/channel';
+import { cancelTask } from '../services/queueApi';
 
 const POLL_INTERVAL = 2500; // 2.5 seconds
 
@@ -23,6 +24,7 @@ export default function Queue() {
   const [error, setError] = useState<string>('');
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [retryingTasks, setRetryingTasks] = useState<Set<string>>(new Set());
+  const [cancellingTasks, setCancellingTasks] = useState<Set<string>>(new Set());
 
   // Fetch queue status
   const fetchQueue = async () => {
@@ -52,6 +54,26 @@ export default function Queue() {
       setError(message);
     } finally {
       setRetryingTasks((prev) => {
+        const next = new Set(prev);
+        next.delete(taskId);
+        return next;
+      });
+    }
+  };
+
+  // Handle cancel task
+  const handleCancel = async (taskId: string) => {
+    setCancellingTasks((prev) => new Set(prev).add(taskId));
+    
+    try {
+      await cancelTask(taskId);
+      // Refresh queue immediately after cancel
+      await fetchQueue();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to cancel task';
+      setError(message);
+    } finally {
+      setCancellingTasks((prev) => {
         const next = new Set(prev);
         next.delete(taskId);
         return next;
@@ -212,6 +234,8 @@ export default function Queue() {
                     videoQuality={channel?.video_quality}
                     onRetry={handleRetry}
                     isRetrying={retryingTasks.has(task.task_id)}
+                    onCancel={handleCancel}
+                    isCancelling={cancellingTasks.has(task.task_id)}
                   />
                 );
               })}

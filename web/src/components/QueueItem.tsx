@@ -2,7 +2,7 @@
  * QueueItem component - Display individual download task with status
  */
 
-import { AlertCircle, RefreshCw, Languages, Video } from 'lucide-react';
+import { AlertCircle, RefreshCw, Languages, Video, X } from 'lucide-react';
 import type { DownloadTask } from '../types/download';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
@@ -16,7 +16,9 @@ interface QueueItemProps {
   subtitleLanguage?: string;
   videoQuality?: string;
   onRetry?: (taskId: string) => void;
+  onCancel?: (taskId: string) => void;
   isRetrying?: boolean;
+  isCancelling?: boolean;
 }
 
 /**
@@ -55,9 +57,10 @@ function getStatusColorClass(status: string): string {
   }
 }
 
-export function QueueItem({ task, channelName, subtitleLanguage, videoQuality, onRetry, isRetrying = false }: QueueItemProps) {
+export function QueueItem({ task, channelName, subtitleLanguage, videoQuality, onRetry, onCancel, isRetrying = false, isCancelling = false }: QueueItemProps) {
   const showProgress = task.status === 'downloading';
   const canRetry = task.status === 'failed' && task.retry_count < 3;
+  const canCancel = task.status !== 'completed';
 
   return (
     <Card className="hover:shadow-md transition-shadow border-l-4" style={{
@@ -140,27 +143,53 @@ export function QueueItem({ task, channelName, subtitleLanguage, videoQuality, o
             )}
           </div>
 
-          {/* Retry Button */}
-          {canRetry && onRetry && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onRetry(task.task_id)}
-              disabled={isRetrying}
-            >
-              {isRetrying ? (
-                <>
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  Retrying...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                  Retry
-                </>
-              )}
-            </Button>
-          )}
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            {/* Cancel Button */}
+            {canCancel && onCancel && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onCancel(task.task_id)}
+                disabled={isCancelling}
+                className="text-destructive hover:text-destructive"
+              >
+                {isCancelling ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Cancelling...
+                  </>
+                ) : (
+                  <>
+                    <X className="h-3.5 w-3.5 mr-1.5" />
+                    Cancel
+                  </>
+                )}
+              </Button>
+            )}
+
+            {/* Retry Button */}
+            {canRetry && onRetry && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onRetry(task.task_id)}
+                disabled={isRetrying}
+              >
+                {isRetrying ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Retrying...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                    Retry
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Timestamps */}
