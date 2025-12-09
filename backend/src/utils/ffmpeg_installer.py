@@ -198,18 +198,22 @@ class FFmpegInstaller:
                         files_to_extract.append(
                             (
                                 file_info,
-                                "ffmpeg.exe"
-                                if self.platform == "Windows"
-                                else "ffmpeg",
+                                (
+                                    "ffmpeg.exe"
+                                    if self.platform == "Windows"
+                                    else "ffmpeg"
+                                ),
                             )
                         )
                     elif "ffprobe.exe" in filename or "ffprobe" == Path(filename).name:
                         files_to_extract.append(
                             (
                                 file_info,
-                                "ffprobe.exe"
-                                if self.platform == "Windows"
-                                else "ffprobe",
+                                (
+                                    "ffprobe.exe"
+                                    if self.platform == "Windows"
+                                    else "ffprobe"
+                                ),
                             )
                         )
 
