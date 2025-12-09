@@ -4,7 +4,13 @@ A full-stack YouTube video downloader with FastAPI backend and React frontend. M
 
 ## Features
 
-- **Channel Management**: Add and track YouTube channels
+- **Channel Management**: Add and track YouTube channels with custom names
+- **Custom Channel Naming**: Organize channels with user-defined names separate from YouTube titles
+- **Global Settings**: Configure default download path, subtitle language, and video quality
+- **Per-Channel Settings**: Override global defaults with channel-specific preferences
+- **Quality Control**: Choose video quality from 4K down to 144p, or let it auto-select best
+- **Subtitle Download**: Automatically download subtitles in your preferred language
+- **Settings Inheritance**: Smart fallback chain (channel → global → default)
 - **Batch Downloads**: Paste multiple YouTube URLs and download them all at once
 - **Background Processing**: Downloads run asynchronously using Huey task queue
 - **Real-Time Monitoring**: View download progress with live updates every 2.5 seconds

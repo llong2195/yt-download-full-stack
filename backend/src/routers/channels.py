@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from src.models.database import get_db
 from src.models.schemas import (
     ChannelCreate,
+    ChannelUpdate,
     ChannelListResponse,
     ChannelResponse,
 )
@@ -41,9 +42,16 @@ async def add_channel(
     request: ChannelCreate,
     db: Session = Depends(get_db),
 ):
-    """Add a new channel by URL."""
+    """Add a new channel by URL with custom name and settings."""
     try:
-        channel = channel_service.validate_and_add_channel(db, request.url)
+        channel = channel_service.validate_and_add_channel(
+            db=db,
+            url=request.url,
+            custom_name=request.name,
+            download_path=request.download_path,
+            subtitle_language=request.subtitle_language,
+            video_quality=request.video_quality,
+        )
         return ChannelResponse(**channel)
 
     except channel_service.InvalidChannelURLError as e:
@@ -60,6 +68,20 @@ async def add_channel(
             detail=str(e),
         )
 
+    except channel_service.DuplicateNameError as e:
+        logger.exception(f"Duplicate channel name: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e),
+        )
+
+    except channel_service.ValidationError as e:
+        logger.exception(f"Validation error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
     except channel_service.MetadataFetchError as e:
         logger.exception(f"Metadata fetch error: {str(e)}", exc_info=True)
         raise HTTPException(
@@ -72,6 +94,56 @@ async def add_channel(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to add channel: {str(e)}",
+        )
+
+
+@router.put("/{channel_id}", response_model=ChannelResponse)
+async def update_channel(
+    channel_id: int,
+    request: ChannelUpdate,
+    db: Session = Depends(get_db),
+):
+    """Update channel settings."""
+    try:
+        channel = channel_service.update_channel(
+            db=db,
+            channel_id=channel_id,
+            name=request.name,
+            download_path=request.download_path,
+            subtitle_language=request.subtitle_language,
+            video_quality=request.video_quality,
+        )
+
+        if not channel:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Channel with ID {channel_id} not found",
+            )
+
+        return ChannelResponse(**channel)
+
+    except channel_service.DuplicateNameError as e:
+        logger.exception(f"Duplicate channel name: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e),
+        )
+
+    except channel_service.ValidationError as e:
+        logger.exception(f"Validation error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.exception(f"Failed to update channel: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update channel: {str(e)}",
         )
 
 

@@ -30,6 +30,10 @@ export default function Channels() {
 
   // Add channel form state
   const [newChannelUrl, setNewChannelUrl] = useState("");
+  const [newChannelName, setNewChannelName] = useState("");
+  const [newChannelPath, setNewChannelPath] = useState("");
+  const [newChannelLanguage, setNewChannelLanguage] = useState("");
+  const [newChannelQuality, setNewChannelQuality] = useState("");
   const [addingChannel, setAddingChannel] = useState(false);
   const [addError, setAddError] = useState<string>("");
 
@@ -64,17 +68,32 @@ export default function Channels() {
       return;
     }
 
+    if (!newChannelName.trim()) {
+      setAddError("Please enter a custom channel name");
+      return;
+    }
+
     try {
       setAddingChannel(true);
       setAddError("");
 
-      const newChannel = await addChannel(newChannelUrl.trim());
+      const newChannel = await addChannel({
+        url: newChannelUrl.trim(),
+        name: newChannelName.trim(),
+        download_path: newChannelPath.trim() || undefined,
+        subtitle_language: newChannelLanguage || undefined,
+        video_quality: newChannelQuality || undefined,
+      });
 
       // Add to list with video_count = 0
       setChannels([{ ...newChannel, video_count: 0 }, ...channels]);
 
       // Clear form
       setNewChannelUrl("");
+      setNewChannelName("");
+      setNewChannelPath("");
+      setNewChannelLanguage("");
+      setNewChannelQuality("");
     } catch (err) {
       const message =
         err instanceof ApiError ? err.message : "Failed to add channel";
@@ -133,16 +152,97 @@ export default function Channels() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleAddChannel} className="flex flex-col sm:flex-row gap-3">
-              <Input
-                type="text"
-                placeholder="https://www.youtube.com/@channel or https://youtube.com/@username"
-                value={newChannelUrl}
-                onChange={(e) => setNewChannelUrl(e.target.value)}
-                disabled={addingChannel}
-                className="flex-1"
-              />
-              <Button type="submit" disabled={addingChannel} className="sm:w-auto w-full">
+            <form onSubmit={handleAddChannel} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <label htmlFor="channel-url" className="text-sm font-medium">
+                    YouTube Channel URL <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    id="channel-url"
+                    type="text"
+                    placeholder="https://www.youtube.com/@channel"
+                    value={newChannelUrl}
+                    onChange={(e) => setNewChannelUrl(e.target.value)}
+                    disabled={addingChannel}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="channel-name" className="text-sm font-medium">
+                    Custom Name <span className="text-destructive">*</span>
+                  </label>
+                  <Input
+                    id="channel-name"
+                    type="text"
+                    placeholder="My Channel"
+                    value={newChannelName}
+                    onChange={(e) => setNewChannelName(e.target.value)}
+                    disabled={addingChannel}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="download-path" className="text-sm font-medium">
+                    Download Path (optional)
+                  </label>
+                  <Input
+                    id="download-path"
+                    type="text"
+                    placeholder="./downloads/my-channel"
+                    value={newChannelPath}
+                    onChange={(e) => setNewChannelPath(e.target.value)}
+                    disabled={addingChannel}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="subtitle-lang" className="text-sm font-medium">
+                    Subtitle Language (optional)
+                  </label>
+                  <select
+                    id="subtitle-lang"
+                    value={newChannelLanguage}
+                    onChange={(e) => setNewChannelLanguage(e.target.value)}
+                    disabled={addingChannel}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="">-- Use Global Default --</option>
+                    <option value="en">English</option>
+                    <option value="ja">Japanese</option>
+                    <option value="ko">Korean</option>
+                    <option value="zh">Chinese</option>
+                    <option value="vi">Vietnamese</option>
+                    <option value="es">Spanish</option>
+                    <option value="fr">French</option>
+                    <option value="de">German</option>
+                  </select>
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="video-quality" className="text-sm font-medium">
+                    Video Quality (optional)
+                  </label>
+                  <select
+                    id="video-quality"
+                    value={newChannelQuality}
+                    onChange={(e) => setNewChannelQuality(e.target.value)}
+                    disabled={addingChannel}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="">-- Use Global Default --</option>
+                    <option value="best">Best Available</option>
+                    <option value="1080p">Full HD (1080p)</option>
+                    <option value="720p">HD (720p)</option>
+                    <option value="480p">SD (480p)</option>
+                    <option value="360p">360p</option>
+                  </select>
+                </div>
+              </div>
+
+              <Button type="submit" disabled={addingChannel} className="w-full sm:w-auto">
                 {addingChannel ? (
                   <>
                     <RefreshCw className="mr-2 h-4 w-4 animate-spin" />

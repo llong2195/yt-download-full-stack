@@ -26,6 +26,9 @@ export default function ChannelCard({
             <CardTitle className="text-lg font-semibold truncate group-hover:text-primary transition-colors">
               {channel.name}
             </CardTitle>
+            <div className="text-sm text-muted-foreground truncate mt-1">
+              {channel.title}
+            </div>
             <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
               <span className="inline-flex items-center px-2 py-1 rounded-full bg-primary/10 text-primary font-medium">
                 {channel.video_count || 0} videos

@@ -43,6 +43,23 @@ def main():
     Base.metadata.create_all(bind=engine)
     print(f"   ✅ Database created at: {settings.DATABASE_URL}")
 
+    # Create GlobalSettings singleton row if doesn't exist
+    print("\n⚙️  Initializing global settings...")
+    from sqlalchemy.orm import Session
+    from src.models.global_settings import GlobalSettings
+
+    with Session(engine) as session:
+        global_settings = session.query(GlobalSettings).filter_by(id=1).first()
+        if not global_settings:
+            global_settings = GlobalSettings(
+                id=1, default_download_path="./download"
+            )
+            session.add(global_settings)
+            session.commit()
+            print("   ✅ GlobalSettings singleton created")
+        else:
+            print("   ✅ GlobalSettings already exists")
+
     # List all tables and indexes
     print("\n📊 Database schema verification:")
 

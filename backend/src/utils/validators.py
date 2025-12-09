@@ -129,3 +129,128 @@ def sanitize_path(path: str) -> str:
     parts = Path(path).parts
     sanitized_parts = [sanitize_filename(part) for part in parts]
     return str(Path(*sanitized_parts))
+
+
+# ============================================================================
+# Video Quality and Subtitle Language Validation
+# ============================================================================
+
+VALID_QUALITY_KEYWORDS = ["best", "worst", "bestaudio", "bestvideo"]
+VALID_RESOLUTIONS = [
+    "2160p",
+    "1440p",
+    "1080p",
+    "720p",
+    "480p",
+    "360p",
+    "240p",
+    "144p",
+]
+VALID_LANGUAGES = [
+    "en",
+    "ja",
+    "ko",
+    "zh",
+    "vi",
+    "es",
+    "fr",
+    "de",
+    "ru",
+    "ar",
+    "pt",
+    "it",
+    "th",
+    "pl",
+    "nl",
+    "tr",
+    "sv",
+    "id",
+    "hi",
+    "cs",
+]
+
+
+def validate_video_quality(quality: str | None) -> bool:
+    """Validate video quality setting.
+
+    Args:
+        quality: Video quality string (e.g., '1080p', 'best')
+
+    Returns:
+        True if valid quality, False otherwise
+    """
+    if quality is None:
+        return True
+    return quality in VALID_QUALITY_KEYWORDS or quality in VALID_RESOLUTIONS
+
+
+def validate_subtitle_language(language: str | None) -> bool:
+    """Validate subtitle language code.
+
+    Args:
+        language: ISO 639-1 language code (e.g., 'en', 'ja')
+
+    Returns:
+        True if valid language code, False otherwise
+    """
+    if language is None:
+        return True
+    return len(language) == 2 and language.lower() in VALID_LANGUAGES
+
+
+def validate_download_path(path: str) -> tuple[bool, str | None]:
+    """Validate download path.
+
+    Args:
+        path: Download path string
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not path or not path.strip():
+        return False, "Download path cannot be empty"
+
+    # Check for invalid filesystem characters
+    invalid_chars = '<>:"|?*'
+    for char in invalid_chars:
+        if char in path:
+            return (
+                False,
+                f"Path contains invalid character: {char}",
+            )
+
+    # Check path length (leave room for filenames)
+    if len(path) > 250:
+        return False, "Path too long (max 250 characters)"
+
+    # Check for Windows reserved names
+    reserved_names = [
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        "COM1",
+        "COM2",
+        "COM3",
+        "COM4",
+        "COM5",
+        "COM6",
+        "COM7",
+        "COM8",
+        "COM9",
+        "LPT1",
+        "LPT2",
+        "LPT3",
+        "LPT4",
+        "LPT5",
+        "LPT6",
+        "LPT7",
+        "LPT8",
+        "LPT9",
+    ]
+    path_obj = Path(path)
+    for part in path_obj.parts:
+        if part.upper() in reserved_names:
+            return False, f"Path contains reserved name: {part}"
+
+    return True, None

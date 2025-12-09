@@ -22,11 +22,11 @@
 
 **⚠️ NOTE**: This project uses SQLAlchemy's `Base.metadata.create_all()` (not Alembic migrations). Schema changes require updating model classes and running `init_db.py`.
 
-- [ ] T001 Create GlobalSettings SQLAlchemy model class in backend/src/models/global_settings.py
-- [ ] T002 Extend Channel model with new fields (title, subtitle_language, video_quality) in backend/src/models/channel.py
-- [ ] T003 Update database initialization to create GlobalSettings singleton row in backend/init_db.py
-- [ ] T004 Run `python backend/init_db.py` to apply schema changes and verify tables created
-- [ ] T005 Verify GlobalSettings singleton row exists with default values in database using SQLite CLI
+- [X] T001 Create GlobalSettings SQLAlchemy model class in backend/src/models/global_settings.py
+- [X] T002 Extend Channel model with new fields (title, subtitle_language, video_quality) in backend/src/models/channel.py
+- [X] T003 Update database initialization to create GlobalSettings singleton row in backend/init_db.py
+- [X] T004 Run `python backend/init_db.py` to apply schema changes and verify tables created
+- [X] T005 Verify GlobalSettings singleton row exists with default values in database using SQLite CLI
 
 **Checkpoint**: Database schema ready for implementation
 
@@ -44,13 +44,13 @@
 
 **⚠️ CRITICAL**: Complete this phase before starting any user story. Phase 1 (models + schema) must be complete.
 
-- [ ] T006 [P] Add GlobalSettings Pydantic schemas (GlobalSettingsSchema, GlobalSettingsUpdateSchema) in backend/src/models/schemas.py
-- [ ] T007 [P] Extend Channel Pydantic schemas (ChannelCreateSchema, ChannelUpdateSchema, ChannelResponseSchema) in backend/src/models/schemas.py
-- [ ] T008 [P] Add video quality validation constants and function in backend/src/utils/validators.py
-- [ ] T009 [P] Add subtitle language validation constants and function in backend/src/utils/validators.py
-- [ ] T010 [P] Add download path validation function in backend/src/utils/validators.py
-- [ ] T011 Create SettingsRepository with get_settings and update_settings methods in backend/src/repository/settings_repo.py
-- [ ] T012 Extend ChannelRepository to handle unique name constraint and new fields in backend/src/repository/channel_repo.py
+- [X] T006 [P] Add GlobalSettings Pydantic schemas (GlobalSettingsSchema, GlobalSettingsUpdateSchema) in backend/src/models/schemas.py
+- [X] T007 [P] Extend Channel Pydantic schemas (ChannelCreateSchema, ChannelUpdateSchema, ChannelResponseSchema) in backend/src/models/schemas.py
+- [X] T008 [P] Add video quality validation constants and function in backend/src/utils/validators.py
+- [X] T009 [P] Add subtitle language validation constants and function in backend/src/utils/validators.py
+- [X] T010 [P] Add download path validation function in backend/src/utils/validators.py
+- [X] T011 Create SettingsRepository with get_settings and update_settings methods in backend/src/repository/settings_repo.py
+- [X] T012 Extend ChannelRepository to handle unique name constraint and new fields in backend/src/repository/channel_repo.py
 
 **Checkpoint**: Foundation complete - user stories can now be implemented in parallel
 
@@ -64,30 +64,30 @@
 
 ### Backend Implementation for US2
 
-- [ ] T013 [P] [US2] Create SettingsService with get_settings and update_settings methods in backend/src/services/settings_service.py
-- [ ] T014 [P] [US2] Extend ChannelService with settings inheritance logic (get_effective_settings method) in backend/src/services/channel_service.py
-- [ ] T015 [US2] Update ChannelService create_channel to apply default download path from global settings in backend/src/services/channel_service.py
-- [ ] T016 [US2] Update ChannelService create_channel to validate custom name uniqueness with proper error handling in backend/src/services/channel_service.py
-- [ ] T017 [US2] Update ChannelService update_channel to handle custom name changes with validation in backend/src/services/channel_service.py
-- [ ] T018 [P] [US2] Extend POST /api/channels endpoint to accept new fields (name, subtitle_language, video_quality) in backend/src/routers/channels.py
-- [ ] T019 [P] [US2] Extend PUT /api/channels/{id} endpoint to update custom name and settings in backend/src/routers/channels.py
-- [ ] T020 [P] [US2] Extend GET /api/channels endpoints to return new fields (title, name, subtitle_language, video_quality) in backend/src/routers/channels.py
-- [ ] T021 [US2] Add error handling for 409 Conflict when duplicate channel name in channels router in backend/src/routers/channels.py
+- [X] T013 [P] [US2] Create SettingsService with get_settings and update_settings methods in backend/src/services/settings_service.py
+- [X] T014 [P] [US2] Extend ChannelService with settings inheritance logic (get_effective_settings method) in backend/src/services/channel_service.py
+- [X] T015 [US2] Update ChannelService create_channel to apply default download path from global settings in backend/src/services/channel_service.py
+- [X] T016 [US2] Update ChannelService create_channel to validate custom name uniqueness with proper error handling in backend/src/services/channel_service.py
+- [X] T017 [US2] Update ChannelService update_channel to handle custom name changes with validation in backend/src/services/channel_service.py
+- [X] T018 [P] [US2] Extend POST /api/channels endpoint to accept new fields (name, subtitle_language, video_quality) in backend/src/routers/channels.py
+- [X] T019 [P] [US2] Extend PUT /api/channels/{id} endpoint to update custom name and settings in backend/src/routers/channels.py
+- [X] T020 [P] [US2] Extend GET /api/channels endpoints to return new fields (title, name, subtitle_language, video_quality) in backend/src/routers/channels.py
+- [X] T021 [US2] Add error handling for 409 Conflict when duplicate channel name in channels router in backend/src/routers/channels.py
 
 ### Frontend Implementation for US2
 
-- [ ] T022 [P] [US2] Extend Channel TypeScript interface with title, name, subtitle_language, video_quality fields in web/src/types/channel.ts
-- [ ] T023 [P] [US2] Extend ChannelCreate and ChannelUpdate interfaces in web/src/types/channel.ts
-- [ ] T024 [P] [US2] Add VALID_LANGUAGES constant array in web/src/types/channel.ts
-- [ ] T025 [P] [US2] Add VALID_QUALITIES constant array in web/src/types/channel.ts
-- [ ] T026 [US2] Update channelApi.ts addChannel function to send new fields in web/src/services/channelApi.ts
-- [ ] T027 [US2] Update channelApi.ts updateChannel function to support new fields in web/src/services/channelApi.ts
-- [ ] T028 [US2] Update ChannelCard component to display custom name prominently and title as secondary in web/src/components/ChannelCard.tsx
-- [ ] T029 [US2] Add custom name input field to channel add form in web/src/pages/Channels.tsx
-- [ ] T030 [US2] Add optional download path input to channel add form in web/src/pages/Channels.tsx
-- [ ] T031 [US2] Add optional subtitle language select dropdown to channel add form in web/src/pages/Channels.tsx
-- [ ] T032 [US2] Add optional video quality select dropdown to channel add form in web/src/pages/Channels.tsx
-- [ ] T033 [US2] Add error handling for duplicate name (409) with user-friendly message in web/src/pages/Channels.tsx
+- [X] T022 [P] [US2] Extend Channel TypeScript interface with title, name, subtitle_language, video_quality fields in web/src/types/channel.ts
+- [X] T023 [P] [US2] Extend ChannelCreate and ChannelUpdate interfaces in web/src/types/channel.ts
+- [X] T024 [P] [US2] Add VALID_LANGUAGES constant array in web/src/types/channel.ts
+- [X] T025 [P] [US2] Add VALID_QUALITIES constant array in web/src/types/channel.ts
+- [X] T026 [US2] Update channelApi.ts addChannel function to send new fields in web/src/services/channelApi.ts
+- [X] T027 [US2] Update channelApi.ts updateChannel function to support new fields in web/src/services/channelApi.ts
+- [X] T028 [US2] Update ChannelCard component to display custom name prominently and title as secondary in web/src/components/ChannelCard.tsx
+- [X] T029 [US2] Add custom name input field to channel add form in web/src/pages/Channels.tsx
+- [X] T030 [US2] Add optional download path input to channel add form in web/src/pages/Channels.tsx
+- [X] T031 [US2] Add optional subtitle language select dropdown to channel add form in web/src/pages/Channels.tsx
+- [X] T032 [US2] Add optional video quality select dropdown to channel add form in web/src/pages/Channels.tsx
+- [X] T033 [US2] Add error handling for duplicate name (409) with user-friendly message in web/src/pages/Channels.tsx
 - [ ] T034 [US2] Implement channel edit dialog with all editable fields in web/src/pages/Channels.tsx
 
 **Checkpoint**: User Story 2 complete - channels can be managed with custom names and settings
@@ -102,26 +102,26 @@
 
 ### Backend Implementation for US1
 
-- [ ] T035 [P] [US1] Create settings router with GET /api/settings endpoint in backend/src/routers/settings.py
-- [ ] T036 [P] [US1] Create settings router with PUT /api/settings endpoint in backend/src/routers/settings.py
-- [ ] T037 [US1] Register settings router in FastAPI app in backend/main.py
-- [ ] T038 [US1] Add validation error handling in SettingsService for invalid paths/languages/qualities in backend/src/services/settings_service.py
+- [X] T035 [P] [US1] Create settings router with GET /api/settings endpoint in backend/src/routers/settings.py
+- [X] T036 [P] [US1] Create settings router with PUT /api/settings endpoint in backend/src/routers/settings.py
+- [X] T037 [US1] Register settings router in FastAPI app in backend/main.py
+- [X] T038 [US1] Add validation error handling in SettingsService for invalid paths/languages/qualities in backend/src/services/settings_service.py
 
 ### Frontend Implementation for US1
 
-- [ ] T039 [P] [US1] Create GlobalSettings TypeScript interface in web/src/types/settings.ts
-- [ ] T040 [P] [US1] Create GlobalSettingsUpdate TypeScript interface in web/src/types/settings.ts
-- [ ] T041 [P] [US1] Export VALID_LANGUAGES constant from settings types in web/src/types/settings.ts
-- [ ] T042 [P] [US1] Export VALID_QUALITIES constant from settings types in web/src/types/settings.ts
-- [ ] T043 [P] [US1] Create fetchSettings API function in web/src/services/settingsApi.ts
-- [ ] T044 [P] [US1] Create updateSettings API function in web/src/services/settingsApi.ts
-- [ ] T045 [US1] Create Settings page component with global settings form in web/src/pages/Settings.tsx
-- [ ] T046 [US1] Add default download path input to Settings page in web/src/pages/Settings.tsx
-- [ ] T047 [US1] Add default subtitle language select to Settings page in web/src/pages/Settings.tsx
-- [ ] T048 [US1] Add default video quality select to Settings page in web/src/pages/Settings.tsx
-- [ ] T049 [US1] Add Save button with loading state to Settings page in web/src/pages/Settings.tsx
-- [ ] T050 [US1] Add settings navigation link to app menu/navigation in web/src/App.tsx
-- [ ] T051 [US1] Add error handling and success feedback for settings save in web/src/pages/Settings.tsx
+- [X] T039 [P] [US1] Create GlobalSettings TypeScript interface in web/src/types/settings.ts
+- [X] T040 [P] [US1] Create GlobalSettingsUpdate TypeScript interface in web/src/types/settings.ts
+- [X] T041 [P] [US1] Export VALID_LANGUAGES constant from settings types in web/src/types/settings.ts
+- [X] T042 [P] [US1] Export VALID_QUALITIES constant from settings types in web/src/types/settings.ts
+- [X] T043 [P] [US1] Create fetchSettings API function in web/src/services/settingsApi.ts
+- [X] T044 [P] [US1] Create updateSettings API function in web/src/services/settingsApi.ts
+- [X] T045 [US1] Create Settings page component with global settings form in web/src/pages/Settings.tsx
+- [X] T046 [US1] Add default download path input to Settings page in web/src/pages/Settings.tsx
+- [X] T047 [US1] Add default subtitle language select to Settings page in web/src/pages/Settings.tsx
+- [X] T048 [US1] Add default video quality select to Settings page in web/src/pages/Settings.tsx
+- [X] T049 [US1] Add Save button with loading state to Settings page in web/src/pages/Settings.tsx
+- [X] T050 [US1] Add settings navigation link to app menu/navigation in web/src/App.tsx
+- [X] T051 [US1] Add error handling and success feedback for settings save in web/src/pages/Settings.tsx
 
 **Checkpoint**: User Story 1 complete - global defaults can be configured and are inherited by new channels
 
@@ -135,11 +135,11 @@
 
 ### Backend Implementation for US3
 
-- [ ] T052 [US3] Extend download_service.py to retrieve channel settings before download in backend/src/services/download_service.py
-- [ ] T053 [US3] Implement subtitle language fallback chain (channel → global → null) in download service in backend/src/services/download_service.py
-- [ ] T054 [US3] Pass subtitle language to yt-dlp download command in backend/src/services/youtube_service.py
-- [ ] T055 [US3] Add logging when subtitle language not available for video in backend/src/services/youtube_service.py
-- [ ] T056 [US3] Handle yt-dlp subtitle download errors gracefully in backend/src/tasks/download_tasks.py
+- [X] T052 [US3] Extend download_service.py to retrieve channel settings before download in backend/src/services/download_service.py
+- [X] T053 [US3] Implement subtitle language fallback chain (channel → global → null) in download service in backend/src/services/download_service.py
+- [X] T054 [US3] Pass subtitle language to yt-dlp download command in backend/src/services/youtube_service.py
+- [X] T055 [US3] Add logging when subtitle language not available for video in backend/src/services/youtube_service.py
+- [X] T056 [US3] Handle yt-dlp subtitle download errors gracefully in backend/src/tasks/download_tasks.py
 
 ### Frontend Implementation for US3
 
@@ -158,10 +158,10 @@
 
 ### Backend Implementation for US4
 
-- [ ] T059 [US4] Implement video quality fallback chain (channel → global → "best") in download service in backend/src/services/download_service.py
-- [ ] T060 [US4] Pass video quality to yt-dlp format selection in backend/src/services/youtube_service.py
-- [ ] T061 [US4] Add logging when requested quality not available (fallback used) in backend/src/services/youtube_service.py
-- [ ] T062 [US4] Handle yt-dlp quality selection errors gracefully in backend/src/tasks/download_tasks.py
+- [X] T059 [US4] Implement video quality fallback chain (channel → global → "best") in download service in backend/src/services/download_service.py
+- [X] T060 [US4] Pass video quality to yt-dlp format selection in backend/src/services/youtube_service.py
+- [X] T061 [US4] Add logging when requested quality not available (fallback used) in backend/src/services/youtube_service.py
+- [X] T062 [US4] Handle yt-dlp quality selection errors gracefully in backend/src/tasks/download_tasks.py
 
 ### Frontend Implementation for US4
 
@@ -176,22 +176,22 @@
 
 **Purpose**: Final integration, testing, and quality improvements
 
-- [ ] T065 [P] Add comprehensive error handling for all validation errors across all endpoints in backend/src/routers/
-- [ ] T066 [P] Ensure all API responses follow consistent format (status, data, message) in backend/src/routers/
-- [ ] T067 [P] Add logging for all settings changes (audit trail) in backend/src/services/settings_service.py
-- [ ] T068 [P] Add logging for channel CRUD operations in backend/src/services/channel_service.py
-- [ ] T069 [P] Verify all database indexes are created correctly (check with .schema command)
+- [X] T065 [P] Add comprehensive error handling for all validation errors across all endpoints in backend/src/routers/
+- [X] T066 [P] Ensure all API responses follow consistent format (status, data, message) in backend/src/routers/
+- [X] T067 [P] Add logging for all settings changes (audit trail) in backend/src/services/settings_service.py
+- [X] T068 [P] Add logging for channel CRUD operations in backend/src/services/channel_service.py
+- [X] T069 [P] Verify all database indexes are created correctly (check with .schema command)
 - [ ] T070 [P] Test unique constraint enforcement on Channel.name (attempt duplicate)
 - [ ] T071 [P] Test GlobalSettings singleton constraint (attempt second row)
-- [ ] T072 [P] Add loading states to all async operations in frontend components
-- [ ] T073 [P] Add proper error messages for all validation failures in frontend forms
-- [ ] T074 [P] Ensure responsive design works on all Settings and Channels UI in web/src/
+- [X] T072 [P] Add loading states to all async operations in frontend components
+- [X] T073 [P] Add proper error messages for all validation failures in frontend forms
+- [X] T074 [P] Ensure responsive design works on all Settings and Channels UI in web/src/
 - [ ] T075 Test complete workflow: configure global settings → add channel with partial config → verify inheritance → download video → verify settings applied
 - [ ] T076 Test edge case: duplicate channel name → verify 409 error with clear message
 - [ ] T077 Test edge case: invalid quality/language code → verify validation error
 - [ ] T078 Test edge case: change channel custom name → verify update works and old downloads unaffected
 - [ ] T079 Test settings persistence: restart backend → verify settings loaded correctly
-- [ ] T080 Update README or documentation with new Settings page and channel configuration features
+- [X] T080 Update README or documentation with new Settings page and channel configuration features
 
 **Checkpoint**: Feature complete, polished, and production-ready
 

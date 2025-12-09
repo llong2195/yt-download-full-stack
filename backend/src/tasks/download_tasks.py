@@ -112,7 +112,7 @@ def download_video(task_id: str) -> bool:
             logger.error(f"Task {task_id} not found in database")
             return False
 
-        # Get channel info for download path
+        # Get channel info for download path and settings
         channel = channel_repo.get_channel_by_id(db, task.channel_id)
         if not channel:
             logger.error(f"Channel {task.channel_id} not found for task {task_id}")
@@ -121,6 +121,29 @@ def download_video(task_id: str) -> bool:
             )
             db.commit()
             return False
+
+        # Get global settings for fallback chain
+        from src.repository import settings_repo
+        global_settings = settings_repo.get_settings(db)
+
+        # Determine effective subtitle language (channel → global → None)
+        subtitle_language = None
+        if channel.subtitle_language:
+            subtitle_language = channel.subtitle_language
+        elif global_settings and global_settings.default_subtitle_language:
+            subtitle_language = global_settings.default_subtitle_language
+
+        # Determine effective video quality (channel → global → "best")
+        video_quality = "best"
+        if channel.video_quality:
+            video_quality = channel.video_quality
+        elif global_settings and global_settings.default_video_quality:
+            video_quality = global_settings.default_video_quality
+
+        logger.info(
+            f"Download settings for task {task_id}: "
+            f"quality={video_quality}, subtitles={subtitle_language or 'none'}"
+        )
 
         # Update status to downloading (started_at is set automatically in update_task_status)
         download_repo.update_task_status(db, task.task_id, status="downloading")
@@ -135,17 +158,34 @@ def download_video(task_id: str) -> bool:
         # Prepare output filename
         output_template = str(download_path / f"{task.video_id}.%(ext)s")
 
+        # Build format string based on video quality setting
+        format_string = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+        if video_quality and video_quality != "best":
+            # Map quality settings to yt-dlp format selectors
+            if video_quality.endswith("p"):
+                # Resolution-based (e.g., "1080p")
+                height = video_quality[:-1]
+                format_string = (
+                    f"bestvideo[height<={height}][ext=mp4]+"
+                    f"bestaudio[ext=m4a]/"
+                    f"best[height<={height}][ext=mp4]/"
+                    f"best[height<={height}]"
+                )
+            elif video_quality == "worst":
+                format_string = "worstvideo[ext=mp4]+worstaudio[ext=m4a]/worst[ext=mp4]/worst"
+
         # Configure yt-dlp options
         ydl_opts: yt_dlp._Params = {
-            "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+            "format": format_string,
             "outtmpl": output_template,
             "progress_hooks": [DownloadProgress(task_id, db)],
             "quiet": False,
             "no_warnings": False,
             "extract_flat": False,
             "writethumbnail": False,
-            "writesubtitles": False,
+            "writesubtitles": bool(subtitle_language),
             "writeautomaticsub": False,
+            "subtitleslangs": [subtitle_language] if subtitle_language else [],
             "postprocessors": [
                 {
                     "key": "FFmpegVideoConvertor",
@@ -157,9 +197,34 @@ def download_video(task_id: str) -> bool:
             "skip_unavailable_fragments": True,
         }
 
+        if subtitle_language:
+            logger.info(f"Requesting subtitles in language: {subtitle_language}")
+
         # Download video
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(task.video_url, download=True)
+            try:
+                info = ydl.extract_info(task.video_url, download=True)
+                
+                # Log if subtitles were available
+                if subtitle_language:
+                    available_subs = info.get("subtitles", {})
+                    if subtitle_language not in available_subs:
+                        logger.warning(
+                            f"Requested subtitles ({subtitle_language}) not available "
+                            f"for video {task.video_id}"
+                        )
+            except Exception as e:
+                # Check if it's a quality/format error
+                if "requested format not available" in str(e).lower():
+                    logger.warning(
+                        f"Requested quality ({video_quality}) not available, "
+                        f"falling back to best available"
+                    )
+                    # Retry with best quality
+                    ydl_opts["format"] = "best"
+                    info = ydl.extract_info(task.video_url, download=True)
+                else:
+                    raise
 
             # Get actual downloaded file path
             downloaded_file = ydl.prepare_filename(info)
