@@ -200,7 +200,7 @@ export default function Channels() {
       <div className="space-y-8">
         {/* Header */}
         <div className="space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
             YouTube Channels
           </h1>
           <p className="text-base text-muted-foreground">

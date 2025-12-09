@@ -13,16 +13,16 @@ import Settings from "./pages/Settings";
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen w-full flex flex-col bg-gradient-to-br from-background to-secondary/20">
+      <div className="min-h-screen w-full flex flex-col bg-linear-to-br from-background to-secondary/20">
         {/* Navigation */}
-        <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
           <div className="mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
               <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <div className="rounded-lg bg-primary p-2">
                   <Youtube className="h-5 w-5 text-primary-foreground" />
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                <span className="text-xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                   YT Downloader
                 </span>
               </Link>
