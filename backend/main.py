@@ -3,6 +3,8 @@
 import sys
 from pathlib import Path
 
+import uvicorn
+
 # Add backend directory to Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -25,6 +27,8 @@ from src.utils.error_handlers import (
     NotFoundException,
     ValidationException,
 )
+from sqlalchemy.orm import Session
+from src.models.global_settings import GlobalSettings
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -55,9 +59,7 @@ async def lifespan(app: FastAPI):
 
     # Initialize GlobalSettings if not exists
     logger.info("Checking global settings...")
-    from sqlalchemy.orm import Session
-    from src.models.global_settings import GlobalSettings
-    
+
     with Session(engine) as db:
         global_settings = db.query(GlobalSettings).filter_by(id=1).first()
         if not global_settings:
@@ -65,7 +67,7 @@ async def lifespan(app: FastAPI):
                 id=1,
                 default_download_path="./downloads",
                 default_subtitle_language="en",
-                default_video_quality="best"
+                default_video_quality="best",
             )
             db.add(global_settings)
             db.commit()
@@ -220,3 +222,7 @@ app.include_router(downloads.router, prefix="/api/downloads", tags=["downloads"]
 app.include_router(queue.router, prefix="/api/queue", tags=["queue"])
 app.include_router(history.router, prefix="/api/history", tags=["history"])
 app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=settings.DEBUG)
