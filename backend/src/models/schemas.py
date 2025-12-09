@@ -1,7 +1,7 @@
 """Pydantic schemas for API request/response models."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -89,6 +89,44 @@ class ChannelListResponse(BaseModel):
 
     channels: list[ChannelResponse]
     total: int
+
+
+class ChannelImportLine(BaseModel):
+    """Single channel import line."""
+
+    name: str
+    url: str
+    download_path: Optional[str] = None
+
+
+class ChannelImportRequest(BaseModel):
+    """Request model for bulk channel import."""
+
+    raw_text: str = Field(
+        ...,
+        description="Raw text with format: <name>|<url>|<download_path> per line",
+    )
+
+
+class ChannelImportResult(BaseModel):
+    """Result for a single channel import operation."""
+
+    line_number: int
+    name: str
+    url: str
+    status: Literal["created", "updated", "failed"]
+    channel_id: Optional[int] = None
+    error: Optional[str] = None
+
+
+class ChannelImportResponse(BaseModel):
+    """Response model for bulk channel import."""
+
+    results: list[ChannelImportResult]
+    total: int
+    created: int
+    updated: int
+    failed: int
 
 
 # ============================================================================

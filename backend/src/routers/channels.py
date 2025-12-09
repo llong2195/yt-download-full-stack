@@ -8,6 +8,9 @@ from src.models.schemas import (
     ChannelUpdate,
     ChannelListResponse,
     ChannelResponse,
+    ChannelImportRequest,
+    ChannelImportResponse,
+    ChannelImportResult,
 )
 from src.services import channel_service
 from src.utils.logger import get_logger
@@ -172,4 +175,45 @@ async def delete_channel(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete channel: {str(e)}",
+        )
+
+
+@router.post("/import", response_model=ChannelImportResponse)
+async def import_channels(
+    request: ChannelImportRequest,
+    db: Session = Depends(get_db),
+):
+    r"""Bulk import channels from raw text. Creates new channels or updates existing ones.
+
+    Expected format (one channel per line):
+    <name>|<channel_url>|<download_path>|<subtitle_language>|<video_quality>
+
+    Example:
+    TK004|https://www.youtube.com/@test|D:\MMO\NHẬT\TK004|ja|1080p
+    TK005|https://www.youtube.com/@test|D:\MMO\NHẬT\TK005|ja|1080p
+    """
+    try:
+        results = channel_service.bulk_import_channels(
+            db=db,
+            raw_text=request.raw_text,
+        )
+
+        # Count statistics
+        created = sum(1 for r in results if r["status"] == "created")
+        updated = sum(1 for r in results if r["status"] == "updated")
+        failed = sum(1 for r in results if r["status"] == "failed")
+
+        return ChannelImportResponse(
+            results=[ChannelImportResult(**r) for r in results],
+            total=len(results),
+            created=created,
+            updated=updated,
+            failed=failed,
+        )
+
+    except Exception as e:
+        logger.exception(f"Failed to import channels: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to import channels: {str(e)}",
         )

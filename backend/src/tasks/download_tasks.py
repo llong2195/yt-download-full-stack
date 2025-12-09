@@ -5,6 +5,7 @@ import re
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import yt_dlp
 import yt_dlp.utils
@@ -157,11 +158,11 @@ def download_video(task_id: str) -> bool:
         # Use video title as filename (sanitized)
         video_title = task.video_title
         base_filename = sanitize_filename(video_title)
-        
+
         # Prepare output filename with numbering if file exists
         counter = 0
         final_filename = base_filename
-        
+
         # Check if file already exists and generate unique name
         while True:
             test_path = download_path / f"{final_filename}.mp4"
@@ -170,7 +171,7 @@ def download_video(task_id: str) -> bool:
             counter += 1
             final_filename = f"{base_filename} ({counter})"
             logger.info(f"File exists, trying with number: {final_filename}")
-        
+
         output_template = str(download_path / f"{final_filename}.%(ext)s")
         logger.info(f"Output filename: {final_filename}.mp4")
 
@@ -202,6 +203,7 @@ def download_video(task_id: str) -> bool:
             "writesubtitles": bool(subtitle_language),
             "writeautomaticsub": False,
             "subtitleslangs": [subtitle_language] if subtitle_language else [],
+            "ffmpeg_location": _get_ffmpeg_location(),
             "postprocessors": [
                 {
                     "key": "FFmpegVideoConvertor",
@@ -220,7 +222,7 @@ def download_video(task_id: str) -> bool:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             try:
                 info = ydl.extract_info(task.video_url, download=True)
-                
+
                 # Log if subtitles were available
                 if subtitle_language:
                     available_subs = info.get("subtitles", {})
@@ -399,3 +401,33 @@ def download_video(task_id: str) -> bool:
 
     finally:
         db.close()
+
+
+def _get_ffmpeg_location() -> Optional[str]:
+    """
+    Get ffmpeg location from local installation or system PATH
+
+    Returns:
+        Path to ffmpeg directory or None if not found
+    """
+    # Check local ffmpeg/bin directory
+    app_dir = Path(__file__).parent.parent.parent.absolute()
+    local_ffmpeg = app_dir / "ffmpeg" / "bin"
+
+    if local_ffmpeg.exists():
+        ffmpeg_exe = (
+            local_ffmpeg / "ffmpeg.exe" if os.name == "nt" else local_ffmpeg / "ffmpeg"
+        )
+        if ffmpeg_exe.exists():
+            logger.info(f"Using local ffmpeg: {local_ffmpeg}")
+            return str(local_ffmpeg)
+
+    # Check if ffmpeg is in system PATH
+    import shutil
+
+    if shutil.which("ffmpeg"):
+        logger.info("Using system ffmpeg from PATH")
+        return None  # Let yt-dlp find it in PATH
+
+    logger.warning("ffmpeg not found in local or system PATH")
+    return None

@@ -428,3 +428,201 @@ def delete_channel_with_files(db: Session, channel_id: int) -> bool:
         # Users can manually delete the directory if needed
 
     return success
+
+
+def bulk_import_channels(
+    db: Session,
+    raw_text: str,
+) -> list[dict]:
+    """Bulk import channels from raw text. Creates new channels or updates existing ones.
+
+    Args:
+        db: Database session
+        raw_text: Raw text with format: <name>|<channel_url>|<download_path>|<subtitle_language>|<video_quality> per line
+
+    Returns:
+        List of import results with status (created/updated/failed) for each line
+    """
+    results = []
+    lines = raw_text.strip().split("\n")
+
+    for line_number, line in enumerate(lines, start=1):
+        line = line.strip()
+        if not line:
+            continue
+
+        try:
+            # Parse line format: name|url|download_path
+            parts = line.split("|")
+            if len(parts) < 2:
+                results.append(
+                    {
+                        "line_number": line_number,
+                        "name": "",
+                        "url": "",
+                        "status": "failed",
+                        "error": "Invalid format. Expected: <name>|<channel_url>|<download_path>|<subtitle_language>|<video_quality>",
+                    }
+                )
+                continue
+
+            name = parts[0].strip()
+            url = parts[1].strip()
+            download_path = parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
+            subtitle_language = parts[3].strip() if len(parts) > 3 and parts[3].strip() else None
+            video_quality = parts[4].strip() if len(parts) > 4 and parts[4].strip() else None
+
+            if not name or not url:
+                results.append(
+                    {
+                        "line_number": line_number,
+                        "name": name,
+                        "url": url,
+                        "status": "failed",
+                        "error": "Name and URL are required",
+                    }
+                )
+                continue
+
+            # Validate URL format
+            if not is_youtube_url(url, "channel"):
+                results.append(
+                    {
+                        "line_number": line_number,
+                        "name": name,
+                        "url": url,
+                        "status": "failed",
+                        "error": "Invalid YouTube channel URL",
+                    }
+                )
+                continue
+
+            # Extract channel info from YouTube
+            try:
+                channel_info = extract_channel_info(url)
+            except MetadataFetchError as e:
+                results.append(
+                    {
+                        "line_number": line_number,
+                        "name": name,
+                        "url": url,
+                        "status": "failed",
+                        "error": f"Failed to fetch channel metadata: {str(e)}",
+                    }
+                )
+                continue
+
+            channel_id = channel_info["channel_id"]
+            title = channel_info["name"]
+            canonical_url = channel_info["url"]
+
+            # Check if channel already exists by channel_id
+            existing_channel = channel_repo.get_channel_by_youtube_id(db, channel_id)
+
+            if existing_channel:
+                # Update existing channel
+                try:
+                    # Update channel
+                    updated_channel = update_channel(
+                        db=db,
+                        channel_id=existing_channel.id,
+                        name=name,
+                        download_path=download_path,
+                        subtitle_language=subtitle_language,
+                        video_quality=video_quality,
+                    )
+
+                    results.append(
+                        {
+                            "line_number": line_number,
+                            "name": name,
+                            "url": url,
+                            "status": "updated",
+                            "channel_id": existing_channel.id,
+                        }
+                    )
+                except Exception as e:
+                    results.append(
+                        {
+                            "line_number": line_number,
+                            "name": name,
+                            "url": url,
+                            "status": "failed",
+                            "error": f"Failed to update channel: {str(e)}",
+                        }
+                    )
+            else:
+                # Create new channel
+                try:
+                    channel = validate_and_add_channel(
+                        db=db,
+                        url=canonical_url,
+                        custom_name=name,
+                        download_path=download_path,
+                        subtitle_language=subtitle_language,
+                        video_quality=video_quality,
+                    )
+
+                    results.append(
+                        {
+                            "line_number": line_number,
+                            "name": name,
+                            "url": url,
+                            "status": "created",
+                            "channel_id": channel["id"],
+                        }
+                    )
+                except DuplicateNameError:
+                    # Name conflict with another channel, try with a suffix
+                    try:
+                        suffix_name = f"{name}_{channel_id[:8]}"
+                        channel = validate_and_add_channel(
+                            db=db,
+                            url=canonical_url,
+                            custom_name=suffix_name,
+                            download_path=download_path,
+                        )
+                        results.append(
+                            {
+                                "line_number": line_number,
+                                "name": suffix_name,
+                                "url": url,
+                                "status": "created",
+                                "channel_id": channel["id"],
+                                "error": f"Name conflict, created as '{suffix_name}'",
+                            }
+                        )
+                    except Exception as e:
+                        results.append(
+                            {
+                                "line_number": line_number,
+                                "name": name,
+                                "url": url,
+                                "status": "failed",
+                                "error": f"Name conflict and failed to create with suffix: {str(e)}",
+                            }
+                        )
+                except Exception as e:
+                    results.append(
+                        {
+                            "line_number": line_number,
+                            "name": name,
+                            "url": url,
+                            "status": "failed",
+                            "error": f"Failed to create channel: {str(e)}",
+                        }
+                    )
+
+        except Exception as e:
+            logger.exception(f"Unexpected error processing line {line_number}: {e}")
+            results.append(
+                {
+                    "line_number": line_number,
+                    "name": "",
+                    "url": "",
+                    "status": "failed",
+                    "error": f"Unexpected error: {str(e)}",
+                }
+            )
+
+    return results

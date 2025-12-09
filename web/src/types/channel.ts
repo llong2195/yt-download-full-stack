@@ -36,6 +36,27 @@ export interface ChannelListResponse {
   total: number;
 }
 
+export interface ChannelImportRequest {
+  raw_text: string;
+}
+
+export interface ChannelImportResult {
+  line_number: number;
+  name: string;
+  url: string;
+  status: "created" | "updated" | "failed";
+  channel_id?: number;
+  error?: string;
+}
+
+export interface ChannelImportResponse {
+  results: ChannelImportResult[];
+  total: number;
+  created: number;
+  updated: number;
+  failed: number;
+}
+
 export interface ErrorResponse {
   detail: string;
 }

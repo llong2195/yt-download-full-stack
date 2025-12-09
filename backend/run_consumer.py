@@ -4,7 +4,7 @@ from huey.consumer import Consumer
 from huey.consumer_options import ConsumerConfig
 from src.tasks.huey_instance import huey
 
-if __name__ == "__main__":
+def main():
     print("🚀 Starting Huey consumer...")
     print(f"📦 Huey instance: {huey.name}")
     print(f"💾 Storage: {huey.storage}")
@@ -24,3 +24,5 @@ if __name__ == "__main__":
     # Create and run consumer
     consumer = Consumer(huey, **config.values)
     consumer.run()
+if __name__ == "__main__":
+    main()

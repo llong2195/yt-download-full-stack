@@ -2,19 +2,10 @@
  * Channels page - main UI for channel management
  */
 
-import { useState, useEffect } from "react";
-import { Plus, RefreshCw, FolderOpen } from "lucide-react";
-import type { Channel } from "@/types/channel";
-import {
-  fetchChannels,
-  addChannel,
-  updateChannel,
-  deleteChannel,
-} from "@/services/channelApi";
-import { ApiError } from "@/services/api";
+import ChannelImportDialog from "@/components/ChannelImportDialog";
 import ChannelList from "@/components/ChannelList";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -22,7 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +20,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { ApiError } from "@/services/api";
+import {
+  addChannel,
+  deleteChannel,
+  fetchChannels,
+  updateChannel,
+} from "@/services/channelApi";
+import type { Channel } from "@/types/channel";
+import { FolderOpen, Plus, RefreshCw, Upload } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function Channels() {
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -57,6 +58,9 @@ export default function Channels() {
   const [editQuality, setEditQuality] = useState("");
   const [updatingChannel, setUpdatingChannel] = useState(false);
   const [editError, setEditError] = useState<string>("");
+
+  // Import dialog state
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   // Load channels on mount
   useEffect(() => {
@@ -199,13 +203,35 @@ export default function Channels() {
     <div className="mx-auto py-6 sm:py-8 px-4 max-w-7xl">
       <div className="space-y-8">
         {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-            YouTube Channels
-          </h1>
-          <p className="text-base text-muted-foreground">
-            Manage the YouTube channels you want to download from
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-2">
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              YouTube Channels
+            </h1>
+            <p className="text-base text-muted-foreground">
+              Manage the YouTube channels you want to download from
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="default"
+              onClick={() => setImportDialogOpen(true)}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Import Channels
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={loadChannels}
+              disabled={loading}
+              title="Refresh channels"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
         </div>
 
         {/* Add Channel Form */}
@@ -497,6 +523,13 @@ export default function Channels() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Import Dialog */}
+        <ChannelImportDialog
+          open={importDialogOpen}
+          onOpenChange={setImportDialogOpen}
+          onImportComplete={loadChannels}
+        />
       </div>
     </div>
   );

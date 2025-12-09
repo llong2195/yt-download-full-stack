@@ -38,3 +38,15 @@ export async function deleteChannel(channelId: number): Promise<void> {
     method: "DELETE",
   });
 }
+
+export async function importChannels(
+  rawText: string
+): Promise<import("@/types/channel").ChannelImportResponse> {
+  return fetchApi<import("@/types/channel").ChannelImportResponse>(
+    "/channels/import",
+    {
+      method: "POST",
+      body: JSON.stringify({ raw_text: rawText }),
+    }
+  );
+}

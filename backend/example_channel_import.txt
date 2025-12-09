@@ -1,0 +1,19 @@
+# Example channel import format
+# Format: <name>|<channel_url>|<download_path>|<subtitle_language>|<video_quality>
+
+TK004|https://www.youtube.com/@test|D:\MMO\NHẬT\TK004|ja|1080p
+TK005|https://www.youtube.com/@test|D:\MMO\NHẬT\TK005|ja|1080p
+TK006|https://www.youtube.com/@test|D:\MMO\NHẬT\TK006|ja|1080p
+TK007|https://www.youtube.com/@test|D:\MMO\NHẬT\TK007|ja|1080p
+TK008|https://www.youtube.com/@test|D:\MMO\NHẬT\TK008|ja|1080p
+TK009|https://www.youtube.com/@test|D:\MMO\NHẬT\TK009|ja|1080p
+TK010|https://www.youtube.com/@test|D:\MMO\NHẬT\TK010|ja|1080p
+TK011|https://www.youtube.com/@test|D:\MMO\NHẬT\TK011|ja|1080p
+TK012|https://www.youtube.com/@test|D:\MMO\NHẬT\TK012|ja|1080p
+TK013|https://www.youtube.com/@test|D:\MMO\NHẬT\TK013|ja|1080p
+TK014|https://www.youtube.com/@test|D:\MMO\NHẬT\TK014|ja|1080p
+TK015|https://www.youtube.com/@test|D:\MMO\NHẬT\TK015|ja|1080p
+TK016|https://www.youtube.com/@test|D:\MMO\NHẬT\TK016|ja|1080p
+TK017|https://www.youtube.com/@test|D:\MMO\NHẬT\TK017|ja|1080p
+TK018|https://www.youtube.com/@test|D:\MMO\NHẬT\TK018|ja|1080p
+TK019|https://www.youtube.com/@test|D:\MMO\NHẬT\TK019|ja|1080p
