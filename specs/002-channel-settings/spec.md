@@ -1,6 +1,6 @@
 # Feature Specification: Channel and Global Download Settings
 
-**Feature Branch**: `2-channel-settings`  
+**Feature Branch**: `002-channel-settings`  
 **Created**: December 9, 2025  
 **Status**: Draft  
 **Input**: User description: "setting chung - nơi download mặc định nếu channel không có setting ( ./download ) - ngôn ngữ mặc định nếu channel không có setting -- Channel ( Kênh ) - thay thế trường name -> title ( tên của kênh ) - thêm trường name: tên do mình điền vào - mỗi channel có một download_path: (mặc định : setting_download_path + name) - Khi tải video file_name: {index}_{title_video}.{định dạng} ( index theo định dạng 0001 -> tăng dần 0002 ) để windown dễ sắp xếp - mỗi channel chọn một ngôn ngữ để đi kèm khi download: ja, vn, ... - cho chọn chất lượng tải xuống khi thêm/sửa channel"
