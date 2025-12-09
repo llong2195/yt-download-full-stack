@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { Save, RefreshCw, Settings as SettingsIcon } from "lucide-react";
+import { Save, RefreshCw, Settings as SettingsIcon, FolderOpen } from "lucide-react";
 import type { GlobalSettings } from "@/types/settings";
 import { fetchSettings, updateSettings } from "@/services/settingsApi";
 import { ApiError } from "@/services/api";
@@ -145,22 +145,23 @@ export default function Settings() {
                 <div className="space-y-2">
                   <label
                     htmlFor="default-download-path"
-                    className="text-sm font-medium"
+                    className="text-sm font-medium flex items-center gap-2"
                   >
+                    <FolderOpen className="h-4 w-4" />
                     Default Download Path{" "}
                     <span className="text-destructive">*</span>
                   </label>
                   <Input
                     id="default-download-path"
                     type="text"
-                    placeholder="./download"
+                    placeholder="D:\Downloads or ./downloads"
                     value={downloadPath}
                     onChange={(e) => setDownloadPath(e.target.value)}
                     disabled={saving}
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    Base directory where channel folders will be created
+                    Base directory where channel folders will be created. Use absolute path (e.g., D:\Downloads) or relative path (e.g., ./downloads)
                   </p>
                 </div>
 

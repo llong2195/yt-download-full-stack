@@ -3,7 +3,7 @@
  */
 
 import { useState, useEffect } from "react";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, FolderOpen } from "lucide-react";
 import type { Channel } from "@/types/channel";
 import {
   fetchChannels,
@@ -253,17 +253,21 @@ export default function Channels() {
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="download-path" className="text-sm font-medium">
+                  <label htmlFor="download-path" className="text-sm font-medium flex items-center gap-2">
+                    <FolderOpen className="h-4 w-4" />
                     Download Path (optional)
                   </label>
                   <Input
                     id="download-path"
                     type="text"
-                    placeholder="./downloads/my-channel"
+                    placeholder="D:\Downloads\my-channel or ./downloads/my-channel"
                     value={newChannelPath}
                     onChange={(e) => setNewChannelPath(e.target.value)}
                     disabled={addingChannel}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Enter absolute path (e.g., D:\Downloads\channel) or relative path (e.g., ./downloads/channel). Leave empty to use default.
+                  </p>
                 </div>
 
                 <div className="space-y-2">
@@ -412,17 +416,21 @@ export default function Channels() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="edit-path" className="text-sm font-medium">
+                <label htmlFor="edit-path" className="text-sm font-medium flex items-center gap-2">
+                  <FolderOpen className="h-4 w-4" />
                   Download Path (optional)
                 </label>
                 <Input
                   id="edit-path"
                   type="text"
-                  placeholder="./downloads/my-channel"
+                  placeholder="D:\Downloads\my-channel or ./downloads/my-channel"
                   value={editPath}
                   onChange={(e) => setEditPath(e.target.value)}
                   disabled={updatingChannel}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Absolute path (e.g., D:\Downloads\channel) or relative path (e.g., ./downloads/channel)
+                </p>
               </div>
 
               <div className="space-y-2">

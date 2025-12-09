@@ -211,7 +211,27 @@ def validate_download_path(path: str) -> tuple[bool, str | None]:
         return False, "Download path cannot be empty"
 
     # Check for invalid filesystem characters
-    invalid_chars = '<>:"|?*'
+    # Note: Allow colon for Windows drive letters (e.g., D:\path)
+    invalid_chars = '<>"|?*'
+    
+    # For Windows paths, colon is only valid at position 1 (drive letter)
+    # Check if this is a Windows absolute path (e.g., C:\path, D:\MMO)
+    is_windows_absolute = (
+        len(path) >= 3 
+        and path[0].isalpha() 
+        and path[1] == ':' 
+        and path[2] in ('\\', '/')
+    )
+    
+    # If not a Windows absolute path, colon is invalid anywhere
+    if not is_windows_absolute and ':' in path:
+        return False, "Path contains invalid character: :"
+    
+    # If Windows absolute path, colon is invalid anywhere except position 1
+    if is_windows_absolute and path.count(':') > 1:
+        return False, "Path contains invalid character: : (multiple colons)"
+    
+    # Check other invalid characters
     for char in invalid_chars:
         if char in path:
             return (
