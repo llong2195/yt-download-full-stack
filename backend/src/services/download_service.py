@@ -91,19 +91,15 @@ def request_download(
 
     video_id = metadata["video_id"]
 
-    # Check for active download
+    # Check for active download (only prevent if currently downloading)
     active_task = download_repo.get_active_task_for_video(db, video_id)
     if active_task:
         raise ActiveDownloadError(
             f"Video is already being downloaded (task #{active_task.id})"
         )
 
-    # Check if already downloaded
-    existing = download_repo.get_successful_download_for_video(db, video_id)
-    if existing:
-        raise DuplicateDownloadError(
-            f"Video already downloaded on {existing.download_date}"
-        )
+    # Note: Allow re-downloading already downloaded videos
+    # The download task will auto-number files to avoid overwriting
 
     # Generate task ID
     task_id = str(uuid.uuid4())
@@ -165,7 +161,7 @@ def request_batch_download_by_urls(
             video_id = metadata["video_id"]
             channel_id_str = metadata["channel_id"]
 
-            # Check for active download
+            # Check for active download (only skip if currently downloading)
             active_task = download_repo.get_active_task_for_video(db, video_id)
             if active_task:
                 results["total_skipped"] += 1
@@ -177,17 +173,8 @@ def request_batch_download_by_urls(
                 )
                 continue
 
-            # Check if already downloaded
-            existing = download_repo.get_successful_download_for_video(db, video_id)
-            if existing:
-                results["total_skipped"] += 1
-                results["errors"].append(
-                    {
-                        "url": url,
-                        "reason": "Already downloaded",
-                    }
-                )
-                continue
+            # Note: We allow re-downloading already downloaded videos
+            # The download task will auto-number files to avoid overwriting
 
             # Auto-create or find channel
             channel = channel_repo.get_channel_by_youtube_id(db, channel_id_str)

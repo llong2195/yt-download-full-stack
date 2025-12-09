@@ -154,8 +154,21 @@ def download_video(task_id: str) -> bool:
         download_path = Path(channel.download_path)
         download_path.mkdir(parents=True, exist_ok=True)
 
-        # Prepare output filename
-        output_template = str(download_path / f"{task.video_id}.%(ext)s")
+        # Prepare output filename with numbering if file exists
+        base_filename = task.video_id
+        counter = 0
+        final_filename = base_filename
+        
+        # Check if file already exists and generate unique name
+        while True:
+            test_path = download_path / f"{final_filename}.mp4"
+            if not test_path.exists():
+                break
+            counter += 1
+            final_filename = f"{base_filename} ({counter})"
+            logger.info(f"File exists, trying with number: {final_filename}")
+        
+        output_template = str(download_path / f"{final_filename}.%(ext)s")
 
         # Build format string based on video quality setting
         format_string = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
@@ -228,8 +241,8 @@ def download_video(task_id: str) -> bool:
             # Get actual downloaded file path
             downloaded_file = ydl.prepare_filename(info)
             if not os.path.exists(downloaded_file):
-                # Try with .mp4 extension
-                downloaded_file = str(download_path / f"{task.video_id}.mp4")
+                # Try with the numbered filename we created
+                downloaded_file = str(download_path / f"{final_filename}.mp4")
 
             file_size = (
                 os.path.getsize(downloaded_file)
