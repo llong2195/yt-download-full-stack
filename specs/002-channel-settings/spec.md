@@ -3,7 +3,7 @@
 **Feature Branch**: `002-channel-settings`  
 **Created**: December 9, 2025  
 **Status**: Draft  
-**Input**: User description: "setting chung - nơi download mặc định nếu channel không có setting ( ./download ) - ngôn ngữ mặc định nếu channel không có setting -- Channel ( Kênh ) - thay thế trường name -> title ( tên của kênh ) - thêm trường name: tên do mình điền vào - mỗi channel có một download_path: (mặc định : setting_download_path + name) - Khi tải video file_name: {index}_{title_video}.{định dạng} ( index theo định dạng 0001 -> tăng dần 0002 ) để windown dễ sắp xếp - mỗi channel chọn một ngôn ngữ để đi kèm khi download: ja, vn, ... - cho chọn chất lượng tải xuống khi thêm/sửa channel"
+**Input**: User description: "setting chung - nơi download mặc định nếu channel không có setting ( ./download ) - ngôn ngữ mặc định nếu channel không có setting -- Channel ( Kênh ) - thay thế trường name -> title ( tên của kênh ) - thêm trường name: tên do mình điền vào - mỗi channel có một download_path: (mặc định : setting_download_path + name) - mỗi channel chọn một ngôn ngữ để đi kèm khi download: ja, vn, ... - cho chọn chất lượng tải xuống khi thêm/sửa channel"
 
 ## Clarifications
 
@@ -11,9 +11,7 @@
 
 - Q: How should global settings be stored? → A: Database table with a single row (id=1) that's always present
 - Q: Should duplicate custom channel names be allowed? → A: No - Enforce unique constraint on custom names (reject duplicates with error)
-- Q: How should the system handle concurrent downloads from the same channel to prevent index number conflicts? → A: Database transaction with row-level lock on Channel record during index assignment
 - Q: Where in the UI should users access global settings configuration? → A: Settings page with dedicated section
-- Q: What maximum filename length should trigger title truncation to stay within filesystem limits? → A: no limit
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -50,25 +48,7 @@ A user wants to organize their YouTube channel subscriptions with custom names a
 
 ---
 
-### User Story 3 - Sequential Video Naming for Organized Downloads (Priority: P1)
-
-A user wants downloaded videos to be automatically numbered in sequence so Windows File Explorer displays them in chronological download order, making it easier to track and watch videos in the order they were saved.
-
-**Why this priority**: Critical for user experience on Windows systems where alphabetical file sorting is default. Without sequential numbering, videos would be sorted unpredictably by title.
-
-**Independent Test**: Can be tested by downloading multiple videos from a channel and verifying they are named with sequential indices that sort correctly in File Explorer.
-
-**Acceptance Scenarios**:
-
-1. **Given** a channel has no videos downloaded yet, **When** the first video "Amazing Tutorial" is downloaded as MP4, **Then** the file is saved as "0001_Amazing Tutorial.mp4"
-2. **Given** a channel already has videos with highest index 0023, **When** a new video "Latest Content" is downloaded, **Then** the file is saved as "0024_Latest Content.mp4"
-3. **Given** multiple videos are downloaded in sequence, **When** viewed in Windows File Explorer sorted by name, **Then** videos appear in download order (0001, 0002, 0003, etc.)
-4. **Given** a channel's last downloaded video has index 9999, **When** the next video is downloaded, **Then** the system uses index 10000 (5 digits)
-5. **Given** video title contains special characters like ":", "/", or "\", **When** the file is saved, **Then** these characters are replaced with safe alternatives (e.g., "-", "_") while maintaining readability
-
----
-
-### User Story 4 - Channel-Specific Subtitle Language Selection (Priority: P2)
+### User Story 3 - Channel-Specific Subtitle Language Selection (Priority: P2)
 
 A user wants to specify preferred subtitle languages for different channels so educational or foreign language content automatically includes the subtitles they need without manual configuration per video.
 
@@ -85,7 +65,7 @@ A user wants to specify preferred subtitle languages for different channels so e
 
 ---
 
-### User Story 5 - Channel-Specific Video Quality Selection (Priority: P2)
+### User Story 4 - Channel-Specific Video Quality Selection (Priority: P2)
 
 A user wants to set preferred video quality for each channel so high-quality content channels download in high resolution while casual content downloads in lower quality to save disk space.
 
@@ -107,8 +87,7 @@ A user wants to set preferred video quality for each channel so high-quality con
 
 - What happens when a custom channel name conflicts with an existing channel's custom name? System must reject the addition/update with a clear error message indicating the name is already in use, and require user to choose a different name.
 - What happens when the download path specified in settings doesn't exist or is not writable? System should create the directory if possible, or fail gracefully with a clear error message.
-- What happens when calculating the next index for video numbering and multiple downloads happen simultaneously? System uses database transaction with row-level lock on the Channel record to atomically read and increment last_video_index, ensuring unique sequential numbers without conflicts.
-- What happens when a video title is extremely long (e.g., 300 characters)? System does not truncate video titles; if the resulting full path exceeds OS filesystem limits, the download will fail with an error message advising the user to shorten the channel's custom name or download path.
+
 - What happens when changing a channel's custom name after videos have already been downloaded to a path containing the old name? Existing videos remain in the old path; new downloads use the new path (or optionally, system could offer to migrate).
 - What happens when a channel is deleted but videos have been downloaded to its custom path? Videos remain on disk but are no longer associated with the channel in the system.
 - What happens when subtitle language code is invalid or not recognized by the download system? System should validate language codes on input and reject invalid ones.
@@ -139,19 +118,6 @@ A user wants to set preferred video quality for each channel so high-quality con
 - **FR-010**: Each channel MUST have a configurable subtitle language preference (optional, inherits from global default if not set)
 - **FR-011**: Each channel MUST have a configurable video quality preference (optional, inherits from global default if not set)
 
-#### Video File Naming
-
-- **FR-012**: System MUST name downloaded video files using the format: {index}_{video_title}.{extension}
-- **FR-013**: The index MUST be a zero-padded 4-digit number starting from 0001 (e.g., 0001, 0002, ..., 0009, 0010, ..., 0099, 0100, ..., 9999)
-- **FR-014**: The index MUST auto-increment based on the highest existing index in the channel's download directory
-- **FR-015**: When index exceeds 9999, system MUST expand to 5 digits (10000, 10001, etc.) to maintain sort order
-- **FR-016**: The video_title component MUST be sanitized to remove or replace filesystem-unsafe characters (e.g., : / \ * ? " < > |)
-- **FR-017**: System MUST track the highest index used for each channel to ensure sequential numbering
-- **FR-017a**: System MUST use database transactions with row-level locking on the Channel record when assigning index numbers to prevent conflicts during concurrent downloads
-- **FR-017b**: Index assignment MUST be atomic: read current last_video_index, increment, update Channel record, all within a single transaction
-- **FR-018**: System MUST NOT truncate video titles in filenames; full title is always preserved in the format {index}_{video_title}.{extension}
-- **FR-018a**: If the complete file path (directory + filename) exceeds OS filesystem limits, system MUST fail the download with a clear error message indicating path length issue and suggesting to shorten the channel name or download path
-
 #### Channel Management UI
 
 - **FR-019**: Users MUST be able to add a new channel by providing a YouTube channel URL and custom name
@@ -168,7 +134,7 @@ A user wants to set preferred video quality for each channel so high-quality con
 - **FR-027**: System MUST create the download directory if it doesn't exist before attempting to download
 - **FR-028**: System MUST log warnings when requested subtitle language is not available for a video
 - **FR-029**: System MUST log warnings when requested quality is not available and a fallback quality is used
-- **FR-030**: System MUST prevent index conflicts by checking for existing files with the same index before finalizing the filename
+
 
 ### Key Entities
 
@@ -186,7 +152,6 @@ A user wants to set preferred video quality for each channel so high-quality con
   - download_path: Custom download directory (defaults to {global_path}/{name})
   - subtitle_language: Preferred subtitle language (optional, inherits from global)
   - video_quality: Preferred video quality (optional, inherits from global)
-  - last_video_index: Highest index used for video files (for sequential numbering)
   - date_added: Timestamp when channel was added
   - last_updated: Timestamp of last update
 
@@ -194,9 +159,8 @@ A user wants to set preferred video quality for each channel so high-quality con
   - channel_id: Reference to the channel
   - video_id: Unique YouTube video identifier
   - video_title: Title of the video
-  - file_name: Full filename including index and extension
+  - file_name: Full filename with extension
   - file_path: Complete path where video is stored
-  - index_number: The sequential index assigned to this video
   - quality: Actual quality downloaded
   - has_subtitles: Whether subtitles were downloaded
   - subtitle_language: Language of downloaded subtitles (if any)
@@ -207,21 +171,18 @@ A user wants to set preferred video quality for each channel so high-quality con
 ### Measurable Outcomes
 
 - **SC-001**: Users can add and configure a new channel with custom name and settings in under 30 seconds
-- **SC-002**: Downloaded videos from the same channel appear in correct chronological order (by index) when sorted by name in File Explorer 100% of the time
-- **SC-003**: Users can successfully set global defaults that apply to all new channels without per-channel configuration
-- **SC-004**: System correctly inherits settings (global → channel) with zero configuration errors or conflicts
-- **SC-005**: Custom channel names make it possible for users to identify channels 50% faster than using YouTube channel titles alone (especially for channels with generic or long titles)
-- **SC-006**: Video file naming prevents sorting confusion, reducing user time spent manually organizing files by 80%
-- **SC-007**: Subtitle language preferences result in 95% of downloaded videos having the correct subtitles when available
-- **SC-008**: Quality settings are respected in 100% of downloads where the specified quality exists
+- **SC-002**: Users can successfully set global defaults that apply to all new channels without per-channel configuration
+- **SC-003**: System correctly inherits settings (global → channel) with zero configuration errors or conflicts
+- **SC-004**: Custom channel names make it possible for users to identify channels 50% faster than using YouTube channel titles alone (especially for channels with generic or long titles)
+- **SC-005**: Subtitle language preferences result in 95% of downloaded videos having the correct subtitles when available
+- **SC-006**: Quality settings are respected in 100% of downloads where the specified quality exists
 
 ## Assumptions *(mandatory)*
 
 - The system already has a working YouTube channel and video download implementation
-- Users primarily use Windows File Explorer for browsing downloaded videos (hence focus on sequential naming for Windows sorting)
+
 - The existing download system supports quality selection and subtitle downloading capabilities
 - Users manage a moderate number of channels (up to 100) where custom naming provides significant organizational value
-- Video downloads are not expected to exceed 9999 per channel under normal usage
 - Language codes follow ISO 639-1 standard (2-letter codes like "en", "ja", "vi")
 - Quality settings follow common video resolution naming (e.g., "720p", "1080p") or keywords ("best", "worst")
 - System has write permissions to create directories and files in specified download paths
@@ -232,7 +193,7 @@ A user wants to set preferred video quality for each channel so high-quality con
 - Automatic migration of existing downloaded files when channel settings change
 - Bulk editing of settings across multiple channels simultaneously
 - Cloud storage integration for download paths
-- Advanced filename templates beyond the {index}_{title}.{ext} format
+- Advanced filename templates or custom naming patterns
 - Automatic subtitle translation or generation
 - Video transcoding or quality conversion after download
 - Duplicate video detection across different channels
