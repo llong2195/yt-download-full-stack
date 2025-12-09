@@ -162,7 +162,7 @@ async def retry_failed_task(task_id: str, db: Session = Depends(get_db)):
 
         # Re-enqueue the task
         download_video(task.id)
-
+        # download_video.schedule(args=(task.id))
         logger.info(
             f"Retrying task {task_id} as {new_task_id} (attempt {task.retry_count}/3)"
         )

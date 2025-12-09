@@ -90,7 +90,7 @@ def request_download(
         raise DownloadServiceError(f"Failed to fetch video metadata: {str(e)}")
 
     logger.info(f"Extracted metadata: {metadata}")
-    
+
     video_id = metadata["video_id"]
     video_title = metadata["video_title"]
 
@@ -119,6 +119,7 @@ def request_download(
 
     # Enqueue download task with Huey
     download_video(task.id)
+    # download_video.schedule(args=(task.id))
 
     logger.info(f"Download requested for video {video_id} (task {task_id})")
 
@@ -162,9 +163,9 @@ def request_batch_download_by_urls(
         try:
             # Extract video metadata
             metadata = youtube_service.extract_video_metadata(url)
-            
+
             logger.info(f"Extracted metadata: {metadata}")
-            
+
             video_id = metadata["video_id"]
             video_title = metadata["video_title"]
             channel_id_str = metadata["channel_id"]
@@ -192,7 +193,7 @@ def request_batch_download_by_urls(
                 # Create channel automatically
                 try:
                     channel_info = channel_service.validate_and_add_channel(
-                        db,channel_url, channel_name_str
+                        db, channel_url, channel_name_str
                     )
                     channel = channel_repo.get_channel_by_id(db, channel_info["id"])
                 except Exception as e:
@@ -221,6 +222,7 @@ def request_batch_download_by_urls(
 
             # Enqueue download task with Huey
             download_video(task.id)
+            # download_video.schedule(args=(task.id))
 
             results["total_created"] += 1
             results["tasks"].append(

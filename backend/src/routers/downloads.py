@@ -66,9 +66,10 @@ async def request_batch_download_by_urls(
             total_created=results["total_created"],
             total_skipped=results["total_skipped"],
             skipped_reason=(
-                f"{len(results['errors'])} videos skipped (see errors)"
-                if results["errors"]
-                else None
+                "; ".join(
+                    [f"{error['url']}: {error['reason']}" for error in results['errors']]
+                )
+                if results['errors'] else None
             ),
         )
 
