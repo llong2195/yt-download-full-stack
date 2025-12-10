@@ -1,6 +1,8 @@
 """Downloads API router."""
 
+import asyncio
 from datetime import datetime
+
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -40,8 +42,10 @@ async def request_batch_download_by_urls(
                 detail="video_urls list cannot be empty",
             )
 
-        results = download_service.request_batch_download_by_urls(
-            db, request.video_urls
+        results = await asyncio.to_thread(
+            download_service.request_batch_download_by_urls,
+            db,
+            request.video_urls,
         )
 
         return BatchDownloadResponse(
@@ -67,9 +71,13 @@ async def request_batch_download_by_urls(
             total_skipped=results["total_skipped"],
             skipped_reason=(
                 "; ".join(
-                    [f"{error['url']}: {error['reason']}" for error in results['errors']]
+                    [
+                        f"{error['url']}: {error['reason']}"
+                        for error in results["errors"]
+                    ]
                 )
-                if results['errors'] else None
+                if results["errors"]
+                else None
             ),
         )
 
@@ -97,8 +105,12 @@ async def request_single_download(
 ):
     """Request a single video download."""
     try:
-        result = download_service.request_download(
-            db, request.video_url, request.channel_id
+
+        result = await asyncio.to_thread(
+            download_service.request_download,
+            db,
+            request.video_url,
+            request.channel_id,
         )
 
         # Fetch full task details

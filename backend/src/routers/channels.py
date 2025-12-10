@@ -1,5 +1,6 @@
 """Channels API router."""
 
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from src.models.database import get_db
@@ -193,9 +194,8 @@ async def import_channels(
     TK005|https://www.youtube.com/@test|D:\MMO\NHẬT\TK005|ja|1080p
     """
     try:
-        results = channel_service.bulk_import_channels(
-            db=db,
-            raw_text=request.raw_text,
+        results = await asyncio.to_thread(
+            channel_service.bulk_import_channels, db=db, raw_text=request.raw_text
         )
 
         # Count statistics
