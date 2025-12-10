@@ -75,8 +75,7 @@ async def lifespan(app: FastAPI):
         else:
             logger.info("✓ GlobalSettings already exists")
 
-    # Note: Huey consumer can be started separately with: python -m huey.consumer main.huey
-    # For development, tasks will be executed synchronously
+    # Note: Huey consumer should be started with start.py script
     logger.info("Huey configured for task execution")
 
     yield
