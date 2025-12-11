@@ -309,9 +309,7 @@ def update_channel(
     if name and name != channel.name:
         existing = channel_repo.get_channel_by_name(db, name)
         if existing:
-            raise DuplicateNameError(
-                f"A channel with the name '{name}' already exists"
-            )
+            raise DuplicateNameError(f"A channel with the name '{name}' already exists")
 
     # Validate download path if provided
     if download_path:
@@ -342,7 +340,7 @@ def update_channel(
         subtitle_language=subtitle_language,
         video_quality=video_quality,
     )
-    
+
     if not updated_channel:
         return None
 
@@ -381,7 +379,7 @@ def get_all_channels_with_stats(db: Session):
             db.query(func.count(DownloadHistory.id))
             .filter(
                 DownloadHistory.channel_id == channel.id,
-                DownloadHistory.success,
+                DownloadHistory.success == True,
             )
             .scalar()
         )
@@ -468,9 +466,15 @@ def bulk_import_channels(
 
             name = parts[0].strip()
             url = parts[1].strip()
-            download_path = parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
-            subtitle_language = parts[3].strip() if len(parts) > 3 and parts[3].strip() else None
-            video_quality = parts[4].strip() if len(parts) > 4 and parts[4].strip() else None
+            download_path = (
+                parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
+            )
+            subtitle_language = (
+                parts[3].strip() if len(parts) > 3 and parts[3].strip() else None
+            )
+            video_quality = (
+                parts[4].strip() if len(parts) > 4 and parts[4].strip() else None
+            )
 
             if not name or not url:
                 results.append(
