@@ -72,6 +72,13 @@ def extract_channel_info(url: str) -> Dict[str, str]:
         MetadataFetchError: If extraction fails
     """
     try:
+        cookies_path = settings.yt_dlp_cookies_path
+        if cookies_path and not cookies_path.exists():
+            raise MetadataFetchError(
+                f"Configured cookies file not found at {cookies_path}. "
+                "Set YT_DLP_COOKIES_FILE to a valid cookies.txt file."
+            )
+
         ydl_opts: yt_dlp._Params = {
             "quiet": True,
             "no_warnings": True,
@@ -107,6 +114,10 @@ def extract_channel_info(url: str) -> Dict[str, str]:
             "cookiesfrombrowser": None,
             "force_generic_extractor": False,
         }
+
+        if cookies_path:
+            logger.info(f"Using cookies file for yt-dlp: {cookies_path}")
+            ydl_opts["cookiefile"] = str(cookies_path)
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)

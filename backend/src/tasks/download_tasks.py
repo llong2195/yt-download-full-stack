@@ -10,12 +10,13 @@ from typing import Optional
 import yt_dlp
 import yt_dlp.utils
 from sqlalchemy.orm import Session
+from src.services.youtube_service import MetadataFetchError as YouTubeMetadataError
 from src.models.database import SessionLocal
 from src.models.download_task import DownloadTask
 from src.repository import channel_repo, download_repo, settings_repo
 from src.utils.logger import get_logger
 from src.utils.validators import sanitize_filename
-
+from src.utils.config import settings
 from .huey_instance import huey
 
 logger = get_logger(__name__)
@@ -189,7 +190,16 @@ def download_video(task_id: str) -> bool:
                     f"best[height<={height}]"
                 )
             elif video_quality == "worst":
-                format_string = "worstvideo[ext=mp4]+worstaudio[ext=m4a]/worst[ext=mp4]/worst"
+                format_string = (
+                    "worstvideo[ext=mp4]+worstaudio[ext=m4a]/worst[ext=mp4]/worst"
+                )
+
+        cookies_path = settings.yt_dlp_cookies_path
+        if cookies_path and not cookies_path.exists():
+            raise YouTubeMetadataError(
+                f"Configured cookies file not found at {cookies_path}. "
+                "Set YT_DLP_COOKIES_FILE to a valid cookies.txt file."
+            )
 
         # Configure yt-dlp options
         ydl_opts: yt_dlp._Params = {
@@ -214,6 +224,10 @@ def download_video(task_id: str) -> bool:
             "fragment_retries": 3,
             "skip_unavailable_fragments": True,
         }
+
+        if cookies_path:
+            logger.info(f"Using cookies file for yt-dlp: {cookies_path}")
+            ydl_opts["cookiefile"] = str(cookies_path)
 
         if subtitle_language:
             logger.info(f"Requesting subtitles in language: {subtitle_language}")

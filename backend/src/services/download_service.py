@@ -6,8 +6,8 @@ from typing import Dict, List
 
 from sqlalchemy.orm import Session
 from src.repository import channel_repo, download_repo
-from src.services import channel_service, youtube_service
-from src.tasks.download_tasks import download_video
+from src.services.channel_service import validate_and_add_channel
+from src.services.youtube_service import extract_video_metadata, YouTubeServiceError
 from src.utils.config import settings
 from src.utils.error_handlers import DiskSpaceException
 from src.utils.logger import get_logger
@@ -85,8 +85,8 @@ def request_download(
 
     # Extract video metadata
     try:
-        metadata = youtube_service.extract_video_metadata(video_url)
-    except youtube_service.YouTubeServiceError as e:
+        metadata = extract_video_metadata(video_url)
+    except YouTubeServiceError as e:
         raise DownloadServiceError(f"Failed to fetch video metadata: {str(e)}")
 
     logger.info(f"Extracted metadata: {metadata}")
@@ -118,6 +118,8 @@ def request_download(
     )
 
     # Enqueue download task with Huey
+    from src.tasks.download_tasks import download_video
+
     download_video(task.id)
     # download_video.schedule(args=(task.id))
 
@@ -162,7 +164,7 @@ def request_batch_download_by_urls(
     for url in video_urls:
         try:
             # Extract video metadata
-            metadata = youtube_service.extract_video_metadata(url)
+            metadata = extract_video_metadata(url)
 
             logger.info(f"Extracted metadata: {metadata}")
 
@@ -192,7 +194,7 @@ def request_batch_download_by_urls(
             if not channel:
                 # Create channel automatically
                 try:
-                    channel_info = channel_service.validate_and_add_channel(
+                    channel_info = validate_and_add_channel(
                         db, channel_url, channel_name_str
                     )
                     channel = channel_repo.get_channel_by_id(db, channel_info["id"])
@@ -221,6 +223,8 @@ def request_batch_download_by_urls(
             )
 
             # Enqueue download task with Huey
+            from src.tasks.download_tasks import download_video
+
             download_video(task.id)
             # download_video.schedule(args=(task.id))
 
@@ -238,7 +242,7 @@ def request_batch_download_by_urls(
 
             logger.info(f"Batch download: Created task for video {video_id}")
 
-        except youtube_service.YouTubeServiceError as e:
+        except YouTubeServiceError as e:
             results["errors"].append(
                 {
                     "url": url,

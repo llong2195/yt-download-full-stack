@@ -2,6 +2,8 @@
 
 import os
 from pathlib import Path
+from typing import Optional
+
 from pydantic_settings import BaseSettings
 
 
@@ -26,6 +28,7 @@ class Settings(BaseSettings):
 
     # CORS Configuration
     CORS_ORIGINS: str = "http://localhost:5173,chrome-extension://*"
+    YT_DLP_COOKIES_FILE: Optional[str] = None
 
     class Config:
         env_file = ".env"
@@ -35,6 +38,13 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
+
+    @property
+    def yt_dlp_cookies_path(self) -> Path | None:
+        """Return expanded Path to yt-dlp cookies file, if configured."""
+        if not self.YT_DLP_COOKIES_FILE:
+            return None
+        return Path(self.YT_DLP_COOKIES_FILE).expanduser()
 
     def ensure_directories(self):
         """Create required directories if they don't exist."""
@@ -46,6 +56,8 @@ class Settings(BaseSettings):
         if db_path.startswith("/") and ":" in db_path:
             db_path = db_path[1:]
         Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+        if cookies_path := self.yt_dlp_cookies_path:
+            cookies_path.parent.mkdir(parents=True, exist_ok=True)
 
     def ensure_huey_database(self):
         """Ensure Huey database file exists and is initialized.
