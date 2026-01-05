@@ -227,6 +227,7 @@ def get_all_history(
 def get_history_with_filters(
     db: Session,
     search: Optional[str] = None,
+    channel_id: Optional[int] = None,
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
     success: Optional[bool] = None,
@@ -238,6 +239,7 @@ def get_history_with_filters(
     Args:
         db: Database session
         search: Search in video_title (case-insensitive)
+        channel_id: Filter by channel ID
         date_from: Filter by download_date >= date_from
         date_to: Filter by download_date <= date_to
         success: Filter by success status
@@ -255,6 +257,9 @@ def get_history_with_filters(
     # Apply filters
     if search:
         query = query.filter(DownloadHistory.video_title.ilike(f"%{search}%"))
+
+    if channel_id:
+        query = query.filter(DownloadHistory.channel_id == channel_id)
 
     if date_from:
         query = query.filter(DownloadHistory.download_date >= date_from)
@@ -297,7 +302,7 @@ def get_history_stats(db: Session, period: str = "all") -> dict:
         date_filter = datetime.now() - timedelta(days=30)
     elif period == "90d":
         date_filter = datetime.now() - timedelta(days=90)
-    
+
     # Base query
     query = db.query(DownloadHistory)
     if date_filter:

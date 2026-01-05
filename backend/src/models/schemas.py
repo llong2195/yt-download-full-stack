@@ -242,7 +242,7 @@ class HistoryListResponse(BaseModel):
     total: int
     limit: int
     offset: int
-    filters_applied: dict[str, str | bool]
+    filters_applied: dict[str, str | bool | int]
 
 
 class HistoryStatsResponse(BaseModel):
