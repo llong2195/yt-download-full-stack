@@ -3,25 +3,26 @@
  */
 
 import { BrowserRouter, Routes, Route, Link } from "react-router";
-import { Youtube } from "lucide-react";
+import { Youtube, Settings as SettingsIcon } from "lucide-react";
 import Channels from "./pages/Channels";
 import Downloads from "./pages/Downloads";
 import Queue from "./pages/Queue";
 import History from "./pages/History";
+import Settings from "./pages/Settings";
 
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen w-full flex flex-col bg-gradient-to-br from-background to-secondary/20">
+      <div className="min-h-screen w-full flex flex-col bg-linear-to-br from-background to-secondary/20">
         {/* Navigation */}
-        <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
           <div className="mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex h-16 items-center justify-between">
               <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <div className="rounded-lg bg-primary p-2">
                   <Youtube className="h-5 w-5 text-primary-foreground" />
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                <span className="text-xl font-bold bg-linear-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                   YT Downloader
                 </span>
               </Link>
@@ -50,6 +51,14 @@ function App() {
                 >
                   History
                 </Link>
+                <div className="w-px h-6 bg-border mx-2" />
+                <Link
+                  to="/settings"
+                  className="px-4 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground flex items-center gap-2"
+                >
+                  <SettingsIcon className="h-4 w-4" />
+                  Settings
+                </Link>
               </nav>
             </div>
           </div>
@@ -62,6 +71,7 @@ function App() {
             <Route path="/downloads" element={<Downloads />} />
             <Route path="/queue" element={<Queue />} />
             <Route path="/history" element={<History />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </main>
 

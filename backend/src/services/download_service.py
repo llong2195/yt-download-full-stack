@@ -6,8 +6,8 @@ from typing import Dict, List
 
 from sqlalchemy.orm import Session
 from src.repository import channel_repo, download_repo
-from src.services import channel_service, youtube_service
-from src.tasks.download_tasks import download_video
+from src.services.channel_service import validate_and_add_channel
+from src.services.youtube_service import extract_video_metadata, YouTubeServiceError
 from src.utils.config import settings
 from src.utils.error_handlers import DiskSpaceException
 from src.utils.logger import get_logger
@@ -85,25 +85,24 @@ def request_download(
 
     # Extract video metadata
     try:
-        metadata = youtube_service.extract_video_metadata(video_url)
-    except youtube_service.YouTubeServiceError as e:
+        metadata = extract_video_metadata(video_url)
+    except YouTubeServiceError as e:
         raise DownloadServiceError(f"Failed to fetch video metadata: {str(e)}")
 
-    video_id = metadata["video_id"]
+    logger.info(f"Extracted metadata: {metadata}")
 
-    # Check for active download
+    video_id = metadata["video_id"]
+    video_title = metadata["video_title"]
+
+    # Check for active download (only prevent if currently downloading)
     active_task = download_repo.get_active_task_for_video(db, video_id)
     if active_task:
         raise ActiveDownloadError(
             f"Video is already being downloaded (task #{active_task.id})"
         )
 
-    # Check if already downloaded
-    existing = download_repo.get_successful_download_for_video(db, video_id)
-    if existing:
-        raise DuplicateDownloadError(
-            f"Video already downloaded on {existing.download_date}"
-        )
+    # Note: Allow re-downloading already downloaded videos
+    # The download task will auto-number files to avoid overwriting
 
     # Generate task ID
     task_id = str(uuid.uuid4())
@@ -114,6 +113,7 @@ def request_download(
         task_id=task_id,
         channel_id=channel_id,
         video_id=video_id,
+        video_title=video_title,
         video_url=video_url,
     )
 
@@ -121,6 +121,7 @@ def request_download(
     from src.tasks.download_tasks import download_video
 
     download_video(task.id)
+    # download_video.schedule(args=(task.id))
 
     logger.info(f"Download requested for video {video_id} (task {task_id})")
 
@@ -163,11 +164,17 @@ def request_batch_download_by_urls(
     for url in video_urls:
         try:
             # Extract video metadata
-            metadata = youtube_service.extract_video_metadata(url)
-            video_id = metadata["video_id"]
-            channel_id_str = metadata["channel_id"]
+            metadata = extract_video_metadata(url)
 
-            # Check for active download
+            logger.info(f"Extracted metadata: {metadata}")
+
+            video_id = metadata["video_id"]
+            video_title = metadata["video_title"]
+            channel_id_str = metadata["channel_id"]
+            channel_name_str = metadata["channel_name"]
+            channel_url = metadata["channel_url"]
+
+            # Check for active download (only skip if currently downloading)
             active_task = download_repo.get_active_task_for_video(db, video_id)
             if active_task:
                 results["total_skipped"] += 1
@@ -179,29 +186,20 @@ def request_batch_download_by_urls(
                 )
                 continue
 
-            # Check if already downloaded
-            existing = download_repo.get_successful_download_for_video(db, video_id)
-            if existing:
-                results["total_skipped"] += 1
-                results["errors"].append(
-                    {
-                        "url": url,
-                        "reason": "Already downloaded",
-                    }
-                )
-                continue
+            # Note: We allow re-downloading already downloaded videos
+            # The download task will auto-number files to avoid overwriting
 
             # Auto-create or find channel
             channel = channel_repo.get_channel_by_youtube_id(db, channel_id_str)
             if not channel:
                 # Create channel automatically
                 try:
-                    channel_info = channel_service.validate_and_add_channel(
-                        db, metadata["channel_url"]
+                    channel_info = validate_and_add_channel(
+                        db, channel_url, channel_name_str
                     )
                     channel = channel_repo.get_channel_by_id(db, channel_info["id"])
                 except Exception as e:
-                    logger.error(f"Failed to auto-create channel: {e}")
+                    logger.error(f"Failed to auto-create channel: {e.__traceback__}")
                     results["errors"].append(
                         {
                             "url": url,
@@ -220,11 +218,15 @@ def request_batch_download_by_urls(
                 task_id=task_id,
                 channel_id=channel.id,
                 video_id=video_id,
+                video_title=video_title,
                 video_url=url,
             )
 
             # Enqueue download task with Huey
+            from src.tasks.download_tasks import download_video
+
             download_video(task.id)
+            # download_video.schedule(args=(task.id))
 
             results["total_created"] += 1
             results["tasks"].append(
@@ -240,7 +242,7 @@ def request_batch_download_by_urls(
 
             logger.info(f"Batch download: Created task for video {video_id}")
 
-        except youtube_service.YouTubeServiceError as e:
+        except YouTubeServiceError as e:
             results["errors"].append(
                 {
                     "url": url,

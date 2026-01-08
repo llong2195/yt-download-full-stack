@@ -5,16 +5,18 @@ import re
 import time
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 
 import yt_dlp
 import yt_dlp.utils
 from sqlalchemy.orm import Session
+from src.services.youtube_service import MetadataFetchError as YouTubeMetadataError
 from src.models.database import SessionLocal
 from src.models.download_task import DownloadTask
-from src.repository import channel_repo, download_repo
+from src.repository import channel_repo, download_repo, settings_repo
 from src.utils.logger import get_logger
 from src.utils.validators import sanitize_filename
-
+from src.utils.config import settings
 from .huey_instance import huey
 
 logger = get_logger(__name__)
@@ -84,7 +86,7 @@ class DownloadProgress:
             logger.info(f"Download finished for task {self.task_id}")
 
 
-@huey.task(retries=3, retry_delay=60)
+@huey.task(retries=3, retry_delay=20)
 def download_video(task_id: str) -> bool:
     """
     Download video from YouTube using yt-dlp.
@@ -112,7 +114,7 @@ def download_video(task_id: str) -> bool:
             logger.error(f"Task {task_id} not found in database")
             return False
 
-        # Get channel info for download path
+        # Get channel info for download path and settings
         channel = channel_repo.get_channel_by_id(db, task.channel_id)
         if not channel:
             logger.error(f"Channel {task.channel_id} not found for task {task_id}")
@@ -121,6 +123,28 @@ def download_video(task_id: str) -> bool:
             )
             db.commit()
             return False
+
+        # Get global settings for fallback chain
+        global_settings = settings_repo.get_settings(db)
+
+        # Determine effective subtitle language (channel → global → None)
+        subtitle_language = None
+        if channel.subtitle_language:
+            subtitle_language = channel.subtitle_language
+        elif global_settings and global_settings.default_subtitle_language:
+            subtitle_language = global_settings.default_subtitle_language
+
+        # Determine effective video quality (channel → global → "best")
+        video_quality = "best"
+        if channel.video_quality:
+            video_quality = channel.video_quality
+        elif global_settings and global_settings.default_video_quality:
+            video_quality = global_settings.default_video_quality
+
+        logger.info(
+            f"Download settings for task {task_id}: "
+            f"quality={video_quality}, subtitles={subtitle_language or 'none'}"
+        )
 
         # Update status to downloading (started_at is set automatically in update_task_status)
         download_repo.update_task_status(db, task.task_id, status="downloading")
@@ -132,20 +156,64 @@ def download_video(task_id: str) -> bool:
         download_path = Path(channel.download_path)
         download_path.mkdir(parents=True, exist_ok=True)
 
-        # Prepare output filename
-        output_template = str(download_path / f"{task.video_id}.%(ext)s")
+        # Use video title as filename (sanitized)
+        video_title = task.video_title
+        base_filename = sanitize_filename(video_title)
+
+        # Prepare output filename with numbering if file exists
+        counter = 0
+        final_filename = base_filename
+
+        # Check if file already exists and generate unique name
+        while True:
+            test_path = download_path / f"{final_filename}.mp4"
+            if not test_path.exists():
+                break
+            counter += 1
+            final_filename = f"{base_filename} ({counter})"
+            logger.info(f"File exists, trying with number: {final_filename}")
+
+        output_template = str(download_path / f"{final_filename}.%(ext)s")
+        logger.info(f"Output filename: {final_filename}.mp4")
+
+        # Build format string based on video quality setting
+        format_string = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+        if video_quality and video_quality != "best":
+            # Map quality settings to yt-dlp format selectors
+            if video_quality.endswith("p"):
+                # Resolution-based (e.g., "1080p")
+                height = video_quality[:-1]
+                format_string = (
+                    f"bestvideo[height<={height}][ext=mp4]+"
+                    f"bestaudio[ext=m4a]/"
+                    f"best[height<={height}][ext=mp4]/"
+                    f"best[height<={height}]"
+                )
+            elif video_quality == "worst":
+                format_string = (
+                    "worstvideo[ext=mp4]+worstaudio[ext=m4a]/worst[ext=mp4]/worst"
+                )
+
+        cookies_path = settings.yt_dlp_cookies_path
+        if cookies_path and not cookies_path.exists():
+            raise YouTubeMetadataError(
+                f"Configured cookies file not found at {cookies_path}. "
+                "Set YT_DLP_COOKIES_FILE to a valid cookies.txt file."
+            )
 
         # Configure yt-dlp options
         ydl_opts: yt_dlp._Params = {
-            "format": "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best",
+            "format": format_string,
             "outtmpl": output_template,
             "progress_hooks": [DownloadProgress(task_id, db)],
             "quiet": False,
             "no_warnings": False,
             "extract_flat": False,
             "writethumbnail": False,
-            "writesubtitles": False,
+            "writesubtitles": bool(subtitle_language),
             "writeautomaticsub": False,
+            "subtitleslangs": [subtitle_language] if subtitle_language else [],
+            "ffmpeg_location": _get_ffmpeg_location(),
             "postprocessors": [
                 {
                     "key": "FFmpegVideoConvertor",
@@ -157,15 +225,44 @@ def download_video(task_id: str) -> bool:
             "skip_unavailable_fragments": True,
         }
 
+        if cookies_path:
+            logger.info(f"Using cookies file for yt-dlp: {cookies_path}")
+            ydl_opts["cookiefile"] = str(cookies_path)
+
+        if subtitle_language:
+            logger.info(f"Requesting subtitles in language: {subtitle_language}")
+
         # Download video
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(task.video_url, download=True)
+            try:
+                info = ydl.extract_info(task.video_url, download=True)
+
+                # Log if subtitles were available
+                if subtitle_language:
+                    available_subs = info.get("subtitles", {})
+                    if subtitle_language not in available_subs:
+                        logger.warning(
+                            f"Requested subtitles ({subtitle_language}) not available "
+                            f"for video {task.video_id}"
+                        )
+            except Exception as e:
+                # Check if it's a quality/format error
+                if "requested format not available" in str(e).lower():
+                    logger.warning(
+                        f"Requested quality ({video_quality}) not available, "
+                        f"falling back to best available"
+                    )
+                    # Retry with best quality
+                    ydl_opts["format"] = "best"
+                    info = ydl.extract_info(task.video_url, download=True)
+                else:
+                    raise
 
             # Get actual downloaded file path
             downloaded_file = ydl.prepare_filename(info)
             if not os.path.exists(downloaded_file):
-                # Try with .mp4 extension
-                downloaded_file = str(download_path / f"{task.video_id}.mp4")
+                # Try with the numbered filename we created
+                downloaded_file = str(download_path / f"{final_filename}.mp4")
 
             file_size = (
                 os.path.getsize(downloaded_file)
@@ -318,3 +415,33 @@ def download_video(task_id: str) -> bool:
 
     finally:
         db.close()
+
+
+def _get_ffmpeg_location() -> Optional[str]:
+    """
+    Get ffmpeg location from local installation or system PATH
+
+    Returns:
+        Path to ffmpeg directory or None if not found
+    """
+    # Check local ffmpeg/bin directory
+    app_dir = Path(__file__).parent.parent.parent.absolute()
+    local_ffmpeg = app_dir / "ffmpeg" / "bin"
+
+    if local_ffmpeg.exists():
+        ffmpeg_exe = (
+            local_ffmpeg / "ffmpeg.exe" if os.name == "nt" else local_ffmpeg / "ffmpeg"
+        )
+        if ffmpeg_exe.exists():
+            logger.info(f"Using local ffmpeg: {local_ffmpeg}")
+            return str(local_ffmpeg)
+
+    # Check if ffmpeg is in system PATH
+    import shutil
+
+    if shutil.which("ffmpeg"):
+        logger.info("Using system ffmpeg from PATH")
+        return None  # Let yt-dlp find it in PATH
+
+    logger.warning("ffmpeg not found in local or system PATH")
+    return None

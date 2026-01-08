@@ -2,41 +2,48 @@
 
 A full-stack YouTube video downloader with FastAPI backend and React frontend. Manage YouTube channels, download videos asynchronously with a task queue, monitor download progress in real-time, and browse complete download history.
 
-## Features
+## Configuration
 
-- **Channel Management**: Add and track YouTube channels
-- **Batch Downloads**: Paste multiple YouTube URLs and download them all at once
-- **Background Processing**: Downloads run asynchronously using Huey task queue
-- **Real-Time Monitoring**: View download progress with live updates every 2.5 seconds
-- **Download History**: Search and filter complete download history with statistics
-- **Error Handling**: Automatic retries (up to 3 attempts) with detailed error reporting
-- **Duplicate Detection**: Prevents re-downloading already completed videos
+Environment variables (backend/.env):
 
-## Architecture
+```bash
+DATABASE_URL=sqlite:///./data/ytdownloader.db
+HUEY_DB=./data/huey.db
+DOWNLOAD_DIR=./downloads
+API_PORT=8000
+CORS_ORIGINS=http://localhost:5173,chrome-extension://*
+DEBUG=false
+YT_DLP_COOKIES_FILE=
+```
+
+### YouTube Authentication via Cookies
+
+Some YouTube videos require an authenticated session. When yt-dlp logs:
 
 ```
-├── backend/                 # FastAPI Python backend
-│   ├── src/
-│   │   ├── models/         # SQLAlchemy ORM models
-│   │   ├── repository/     # Database access layer
-│   │   ├── services/       # Business logic
-│   │   ├── routers/        # API endpoints
-│   │   ├── tasks/          # Huey background tasks
-│   │   └── utils/          # Utilities (config, logging, validation)
-│   └── main.py            # Application entry point
-│
-├── web/                    # React TypeScript frontend
-│   ├── src/
-│   │   ├── components/    # Reusable UI components
-│   │   ├── pages/         # Page components
-│   │   ├── services/      # API client
-│   │   ├── types/         # TypeScript interfaces
-│   │   └── utils/         # Utility functions
-│   └── dist/              # Production build output
-│
-├── data/                   # SQLite databases
-└── downloads/              # Downloaded video files
+Sign in to confirm you’re not a bot.
 ```
+
+You can export cookies from your browser (see
+[yt-dlp FAQ](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp))
+and point the backend at the resulting `cookies.txt` file via
+`YT_DLP_COOKIES_FILE`. The backend will pass the file to yt-dlp when it
+requests metadata, allowing it to access signed-in content.
+
+Steps:
+
+1. Export YouTube cookies using a browser extension or `yt-dlp --cookies-from-browser`.
+2. Set `YT_DLP_COOKIES_FILE` in `backend/.env` to the exported file path.
+3. Restart the backend API (and consumer, if running separately).
+   │ │ ├── services/ # API client
+   │ │ ├── types/ # TypeScript interfaces
+   │ │ └── utils/ # Utility functions
+   │ └── dist/ # Production build output
+   │
+   ├── data/ # SQLite databases
+   └── downloads/ # Downloaded video files
+
+````
 
 ## Technology Stack
 
@@ -71,9 +78,10 @@ See [specs/001-youtube-downloader/quickstart.md](specs/001-youtube-downloader/qu
    ```bash
    git clone <repository-url>
    cd yt-download-full-stack
-   ```
+````
 
 2. **Backend setup**
+
    ```bash
    cd backend
    python -m venv venv
@@ -82,6 +90,7 @@ See [specs/001-youtube-downloader/quickstart.md](specs/001-youtube-downloader/qu
    ```
 
 3. **Frontend setup**
+
    ```bash
    cd web
    pnpm install
@@ -98,6 +107,7 @@ See [specs/001-youtube-downloader/quickstart.md](specs/001-youtube-downloader/qu
 **⚠️ IMPORTANT**: You need to run **3 processes** for the app to work:
 
 1. **Backend API Server** (Terminal 1)
+
    ```bash
    cd backend
    source venv/bin/activate  # On Windows: venv\Scripts\activate
@@ -106,20 +116,22 @@ See [specs/001-youtube-downloader/quickstart.md](specs/001-youtube-downloader/qu
    ```
 
 2. **Huey Task Consumer** (Terminal 2) - **REQUIRED for downloads to work!**
+
    ```bash
    cd backend
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    python run_consumer.py
-   
+
    # Or using huey command directly:
    # python -m huey.consumer main.huey -v -w 2 -k thread
    ```
-   
+
    ⚡ **Without this, downloads will queue but won't execute!**
-   
+
    💡 **Alternative for Development**: Set `HUEY_IMMEDIATE_MODE=true` in `.env` to skip running consumer (tasks execute immediately)
 
 3. **Frontend Dev Server** (Terminal 3)
+
    ```bash
    cd web
    pnpm dev
@@ -132,23 +144,27 @@ See [specs/001-youtube-downloader/quickstart.md](specs/001-youtube-downloader/qu
 ## Usage
 
 ### 1. Add Channels
+
 - Go to "Channels" page
 - Paste a YouTube channel URL
 - Click "Add Channel"
 
 ### 2. Download Videos
+
 - Go to "Downloads" page
 - Paste one or more YouTube video URLs (one per line)
 - Click "Download All"
 - Videos are queued for download
 
 ### 3. Monitor Queue
+
 - Go to "Queue" page
 - View real-time download progress
 - Retry failed downloads
 - See pending, downloading, completed, and failed stats
 
 ### 4. Browse History
+
 - Go to "History" page
 - Search by video title
 - Filter by date range or success/failure
@@ -170,18 +186,21 @@ Once running, visit http://localhost:8000/docs for interactive API documentation
 ## Development
 
 ### Backend Testing
+
 ```bash
 cd backend
 pytest
 ```
 
 ### Frontend Type Checking
+
 ```bash
 cd web
 pnpm type-check
 ```
 
 ### Building for Production
+
 ```bash
 # Backend - runs directly with Python
 cd backend
@@ -212,7 +231,28 @@ DOWNLOAD_DIR=./downloads
 API_PORT=8000
 CORS_ORIGINS=http://localhost:5173,chrome-extension://*
 DEBUG=false
+YT_DLP_COOKIES_FILE=
 ```
+
+### YouTube Authentication via Cookies
+
+Some YouTube videos require an authenticated session. When yt-dlp logs:
+
+```
+Sign in to confirm you’re not a bot.
+```
+
+You can export cookies from your browser (see
+[yt-dlp FAQ](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp))
+and point the backend at the resulting `cookies.txt` file via
+`YT_DLP_COOKIES_FILE`. The backend will pass the file to yt-dlp when it
+requests metadata, allowing it to access signed-in content.
+
+Steps:
+
+1. Export YouTube cookies using a browser extension or `yt-dlp --cookies-from-browser`.
+2. Set `YT_DLP_COOKIES_FILE` in `backend/.env` to the exported file path.
+3. Restart the backend API (and consumer, if running separately).
 
 ## License
 

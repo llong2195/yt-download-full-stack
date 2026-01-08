@@ -18,9 +18,12 @@ class Channel(Base):
     channel_id: Mapped[str] = mapped_column(
         String(255), unique=True, nullable=False, index=True
     )
-    name: Mapped[str] = mapped_column(String(500), nullable=False)
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     url: Mapped[str] = mapped_column(String(1000), nullable=False)
     download_path: Mapped[str] = mapped_column(String(2000), nullable=False)
+    subtitle_language: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    video_quality: Mapped[str | None] = mapped_column(String(50), nullable=True)
     date_added: Mapped[datetime] = mapped_column(
         DateTime, nullable=False, server_default=func.now(), index=True
     )

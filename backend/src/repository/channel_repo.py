@@ -47,30 +47,52 @@ def get_channel_by_youtube_id(
     return db.query(Channel).filter(Channel.channel_id == youtube_channel_id).first()
 
 
+def get_channel_by_name(db: Session, name: str) -> Optional[Channel]:
+    """Get channel by custom name.
+
+    Args:
+        db: Database session
+        name: Custom user-defined channel name
+
+    Returns:
+        Channel object or None if not found
+    """
+    return db.query(Channel).filter(Channel.name == name).first()
+
+
 def create_channel(
     db: Session,
     channel_id: str,
+    title: str,
     name: str,
     url: str,
     download_path: str,
+    subtitle_language: Optional[str] = None,
+    video_quality: Optional[str] = None,
 ) -> Channel:
     """Create a new channel.
 
     Args:
         db: Database session
         channel_id: YouTube channel ID
-        name: Channel display name
+        title: YouTube channel title
+        name: Custom user-defined channel name
         url: Full YouTube channel URL
         download_path: Local filesystem path for downloads
+        subtitle_language: Preferred subtitle language (optional)
+        video_quality: Preferred video quality (optional)
 
     Returns:
         Created Channel object
     """
     channel = Channel(
         channel_id=channel_id,
+        title=title,
         name=name,
         url=url,
         download_path=download_path,
+        subtitle_language=subtitle_language,
+        video_quality=video_quality,
     )
     db.add(channel)
     db.commit()
@@ -97,17 +119,23 @@ def delete_channel(db: Session, channel_id: int) -> bool:
     return True
 
 
-def update_channel_metadata(
+def update_channel(
     db: Session,
     channel_id: int,
     name: Optional[str] = None,
+    download_path: Optional[str] = None,
+    subtitle_language: Optional[str] = None,
+    video_quality: Optional[str] = None,
 ) -> Optional[Channel]:
-    """Update channel metadata.
+    """Update channel settings.
 
     Args:
         db: Database session
         channel_id: Internal channel ID
-        name: New channel name (optional)
+        name: New custom channel name (optional)
+        download_path: New download path (optional)
+        subtitle_language: New subtitle language (optional)
+        video_quality: New video quality (optional)
 
     Returns:
         Updated Channel object or None if not found
@@ -118,6 +146,12 @@ def update_channel_metadata(
 
     if name is not None:
         channel.name = name
+    if download_path is not None:
+        channel.download_path = download_path
+    if subtitle_language is not None:
+        channel.subtitle_language = subtitle_language
+    if video_quality is not None:
+        channel.video_quality = video_quality
 
     channel.last_updated = datetime.now()
 

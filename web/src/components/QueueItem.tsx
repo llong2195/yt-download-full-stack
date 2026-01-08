@@ -2,7 +2,7 @@
  * QueueItem component - Display individual download task with status
  */
 
-import { AlertCircle, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw, Languages, Video, X } from 'lucide-react';
 import type { DownloadTask } from '../types/download';
 import { Alert, AlertDescription } from './ui/alert';
 import { Badge } from './ui/badge';
@@ -13,8 +13,12 @@ import { Progress } from './ui/progress';
 interface QueueItemProps {
   task: DownloadTask;
   channelName?: string;
+  subtitleLanguage?: string;
+  videoQuality?: string;
   onRetry?: (taskId: string) => void;
+  onCancel?: (taskId: string) => void;
   isRetrying?: boolean;
+  isCancelling?: boolean;
 }
 
 /**
@@ -53,9 +57,10 @@ function getStatusColorClass(status: string): string {
   }
 }
 
-export function QueueItem({ task, channelName, onRetry, isRetrying = false }: QueueItemProps) {
+export function QueueItem({ task, channelName, subtitleLanguage, videoQuality, onRetry, onCancel, isRetrying = false, isCancelling = false }: QueueItemProps) {
   const showProgress = task.status === 'downloading';
   const canRetry = task.status === 'failed' && task.retry_count < 3;
+  const canCancel = task.status !== 'completed';
 
   return (
     <Card className="hover:shadow-md transition-shadow border-l-4" style={{
@@ -70,11 +75,23 @@ export function QueueItem({ task, channelName, onRetry, isRetrying = false }: Qu
             <CardTitle className="text-base font-mono truncate">
               {task.video_id}
             </CardTitle>
-            {channelName && (
-              <CardDescription className="text-sm mt-1">
-                Channel: {channelName}
-              </CardDescription>
-            )}
+            <CardDescription className="text-sm mt-1 flex flex-wrap items-center gap-2">
+              {channelName && (
+                <span>Channel: {channelName}</span>
+              )}
+              {subtitleLanguage && (
+                <Badge variant="secondary" className="text-xs">
+                  <Languages className="h-3 w-3 mr-1" />
+                  {subtitleLanguage.toUpperCase()}
+                </Badge>
+              )}
+              {videoQuality && (
+                <Badge variant="secondary" className="text-xs">
+                  <Video className="h-3 w-3 mr-1" />
+                  {videoQuality}
+                </Badge>
+              )}
+            </CardDescription>
           </div>
           <Badge 
             variant={getStatusBadgeVariant(task.status)}
@@ -126,27 +143,53 @@ export function QueueItem({ task, channelName, onRetry, isRetrying = false }: Qu
             )}
           </div>
 
-          {/* Retry Button */}
-          {canRetry && onRetry && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onRetry(task.task_id)}
-              disabled={isRetrying}
-            >
-              {isRetrying ? (
-                <>
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  Retrying...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                  Retry
-                </>
-              )}
-            </Button>
-          )}
+          {/* Action Buttons */}
+          <div className="flex items-center gap-2">
+            {/* Cancel Button */}
+            {canCancel && onCancel && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onCancel(task.task_id)}
+                disabled={isCancelling}
+                className="text-destructive hover:text-destructive"
+              >
+                {isCancelling ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Cancelling...
+                  </>
+                ) : (
+                  <>
+                    <X className="h-3.5 w-3.5 mr-1.5" />
+                    Cancel
+                  </>
+                )}
+              </Button>
+            )}
+
+            {/* Retry Button */}
+            {canRetry && onRetry && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onRetry(task.task_id)}
+                disabled={isRetrying}
+              >
+                {isRetrying ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    Retrying...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                    Retry
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Timestamps */}

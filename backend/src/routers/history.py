@@ -26,6 +26,7 @@ router = APIRouter()
 )
 async def get_history(
     search: Optional[str] = Query(None, description="Search in video titles"),
+    channel_id: Optional[int] = Query(None, description="Filter by channel ID"),
     date_from: Optional[str] = Query(
         None, description="Filter by download date >= this date (ISO format)"
     ),
@@ -41,6 +42,7 @@ async def get_history(
 
     Args:
         search: Search in video titles (case-insensitive)
+        channel_id: Filter by channel ID
         date_from: Filter by download_date >= date_from (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
         date_to: Filter by download_date <= date_to (ISO format)
         success: Filter by success status (true/false)
@@ -78,6 +80,7 @@ async def get_history(
         history_records, total_count = download_repo.get_history_with_filters(
             db=db,
             search=search,
+            channel_id=channel_id,
             date_from=parsed_date_from,
             date_to=parsed_date_to,
             success=success,
@@ -91,9 +94,11 @@ async def get_history(
         ]
 
         # Build filters_applied dict
-        filters_applied: dict[str, str | bool] = {}
+        filters_applied: dict[str, str | bool | int] = {}
         if search:
             filters_applied["search"] = search
+        if channel_id:
+            filters_applied["channel_id"] = channel_id
         if date_from:
             filters_applied["date_from"] = date_from
         if date_to:

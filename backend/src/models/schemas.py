@@ -1,8 +1,39 @@
 """Pydantic schemas for API request/response models."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, Field
+
+
+# ============================================================================
+# Global Settings Schemas
+# ============================================================================
+
+
+class GlobalSettingsSchema(BaseModel):
+    """Response model for global settings."""
+
+    id: int
+    default_download_path: str
+    default_subtitle_language: Optional[str] = None
+    default_video_quality: Optional[str] = None
+    created_at: datetime
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class GlobalSettingsUpdateSchema(BaseModel):
+    """Request model for updating global settings."""
+
+    default_download_path: str = Field(..., description="Base download directory")
+    default_subtitle_language: Optional[str] = Field(
+        None, description="Default subtitle language (ISO 639-1 code)"
+    )
+    default_video_quality: Optional[str] = Field(
+        None, description="Default video quality"
+    )
 
 
 # ============================================================================
@@ -14,6 +45,25 @@ class ChannelCreate(BaseModel):
     """Request model for creating a channel."""
 
     url: str = Field(..., description="YouTube channel URL")
+    name: str = Field(..., description="Custom user-defined channel name")
+    download_path: Optional[str] = Field(
+        None, description="Custom download path (defaults to global setting)"
+    )
+    subtitle_language: Optional[str] = Field(
+        None, description="Subtitle language (ISO 639-1 code)"
+    )
+    video_quality: Optional[str] = Field(None, description="Video quality setting")
+
+
+class ChannelUpdate(BaseModel):
+    """Request model for updating a channel."""
+
+    name: Optional[str] = Field(None, description="Custom user-defined channel name")
+    download_path: Optional[str] = Field(None, description="Custom download path")
+    subtitle_language: Optional[str] = Field(
+        None, description="Subtitle language (ISO 639-1 code)"
+    )
+    video_quality: Optional[str] = Field(None, description="Video quality setting")
 
 
 class ChannelResponse(BaseModel):
@@ -21,9 +71,12 @@ class ChannelResponse(BaseModel):
 
     id: int
     channel_id: str
+    title: str
     name: str
     url: str
     download_path: str
+    subtitle_language: Optional[str] = None
+    video_quality: Optional[str] = None
     date_added: datetime
     last_updated: Optional[datetime] = None
 
@@ -36,6 +89,44 @@ class ChannelListResponse(BaseModel):
 
     channels: list[ChannelResponse]
     total: int
+
+
+class ChannelImportLine(BaseModel):
+    """Single channel import line."""
+
+    name: str
+    url: str
+    download_path: Optional[str] = None
+
+
+class ChannelImportRequest(BaseModel):
+    """Request model for bulk channel import."""
+
+    raw_text: str = Field(
+        ...,
+        description="Raw text with format: <name>|<url>|<download_path> per line",
+    )
+
+
+class ChannelImportResult(BaseModel):
+    """Result for a single channel import operation."""
+
+    line_number: int
+    name: str
+    url: str
+    status: Literal["created", "updated", "failed"]
+    channel_id: Optional[int] = None
+    error: Optional[str] = None
+
+
+class ChannelImportResponse(BaseModel):
+    """Response model for bulk channel import."""
+
+    results: list[ChannelImportResult]
+    total: int
+    created: int
+    updated: int
+    failed: int
 
 
 # ============================================================================
@@ -151,7 +242,7 @@ class HistoryListResponse(BaseModel):
     total: int
     limit: int
     offset: int
-    filters_applied: dict[str, str | bool]
+    filters_applied: dict[str, str | bool | int]
 
 
 class HistoryStatsResponse(BaseModel):

@@ -3,6 +3,8 @@
 import sys
 from pathlib import Path
 
+import uvicorn
+
 # Add backend directory to Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -15,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from src.models import Base, engine
 from src.routers import channels, downloads, history, queue
+from src.routers import settings as settings_router
 from src.tasks.huey_instance import huey
 from src.utils import ffmpeg_installer
 from src.utils.config import settings
@@ -24,6 +27,8 @@ from src.utils.error_handlers import (
     NotFoundException,
     ValidationException,
 )
+from sqlalchemy.orm import Session
+from src.models.global_settings import GlobalSettings
 from src.utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -52,8 +57,25 @@ async def lifespan(app: FastAPI):
     logger.info("Creating database tables...")
     Base.metadata.create_all(bind=engine)
 
-    # Note: Huey consumer can be started separately with: python -m huey.consumer main.huey
-    # For development, tasks will be executed synchronously
+    # Initialize GlobalSettings if not exists
+    logger.info("Checking global settings...")
+
+    with Session(engine) as db:
+        global_settings = db.query(GlobalSettings).filter_by(id=1).first()
+        if not global_settings:
+            global_settings = GlobalSettings(
+                id=1,
+                default_download_path="./downloads",
+                default_subtitle_language="en",
+                default_video_quality="best",
+            )
+            db.add(global_settings)
+            db.commit()
+            logger.info("✓ GlobalSettings initialized with defaults")
+        else:
+            logger.info("✓ GlobalSettings already exists")
+
+    # Note: Huey consumer should be started with start.py script
     logger.info("Huey configured for task execution")
 
     yield
@@ -198,3 +220,8 @@ app.include_router(channels.router, prefix="/api/channels", tags=["channels"])
 app.include_router(downloads.router, prefix="/api/downloads", tags=["downloads"])
 app.include_router(queue.router, prefix="/api/queue", tags=["queue"])
 app.include_router(history.router, prefix="/api/history", tags=["history"])
+app.include_router(settings_router.router, prefix="/api/settings", tags=["settings"])
+
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

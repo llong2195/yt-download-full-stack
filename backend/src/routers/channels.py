@@ -1,12 +1,17 @@
 """Channels API router."""
 
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from src.models.database import get_db
 from src.models.schemas import (
     ChannelCreate,
+    ChannelUpdate,
     ChannelListResponse,
     ChannelResponse,
+    ChannelImportRequest,
+    ChannelImportResponse,
+    ChannelImportResult,
 )
 from src.services import channel_service
 from src.utils.logger import get_logger
@@ -41,9 +46,16 @@ async def add_channel(
     request: ChannelCreate,
     db: Session = Depends(get_db),
 ):
-    """Add a new channel by URL."""
+    """Add a new channel by URL with custom name and settings."""
     try:
-        channel = channel_service.validate_and_add_channel(db, request.url)
+        channel = channel_service.validate_and_add_channel(
+            db=db,
+            url=request.url,
+            custom_name=request.name,
+            download_path=request.download_path,
+            subtitle_language=request.subtitle_language,
+            video_quality=request.video_quality,
+        )
         return ChannelResponse(**channel)
 
     except channel_service.InvalidChannelURLError as e:
@@ -60,6 +72,20 @@ async def add_channel(
             detail=str(e),
         )
 
+    except channel_service.DuplicateNameError as e:
+        logger.exception(f"Duplicate channel name: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e),
+        )
+
+    except channel_service.ValidationError as e:
+        logger.exception(f"Validation error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
     except channel_service.MetadataFetchError as e:
         logger.exception(f"Metadata fetch error: {str(e)}", exc_info=True)
         raise HTTPException(
@@ -72,6 +98,56 @@ async def add_channel(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to add channel: {str(e)}",
+        )
+
+
+@router.put("/{channel_id}", response_model=ChannelResponse)
+async def update_channel(
+    channel_id: int,
+    request: ChannelUpdate,
+    db: Session = Depends(get_db),
+):
+    """Update channel settings."""
+    try:
+        channel = channel_service.update_channel(
+            db=db,
+            channel_id=channel_id,
+            name=request.name,
+            download_path=request.download_path,
+            subtitle_language=request.subtitle_language,
+            video_quality=request.video_quality,
+        )
+
+        if not channel:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Channel with ID {channel_id} not found",
+            )
+
+        return ChannelResponse(**channel)
+
+    except channel_service.DuplicateNameError as e:
+        logger.exception(f"Duplicate channel name: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e),
+        )
+
+    except channel_service.ValidationError as e:
+        logger.exception(f"Validation error: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.exception(f"Failed to update channel: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update channel: {str(e)}",
         )
 
 
@@ -100,4 +176,44 @@ async def delete_channel(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete channel: {str(e)}",
+        )
+
+
+@router.post("/import", response_model=ChannelImportResponse)
+async def import_channels(
+    request: ChannelImportRequest,
+    db: Session = Depends(get_db),
+):
+    r"""Bulk import channels from raw text. Creates new channels or updates existing ones.
+
+    Expected format (one channel per line):
+    <name>|<channel_url>|<download_path>|<subtitle_language>|<video_quality>
+
+    Example:
+    TK004|https://www.youtube.com/@test|D:\MMO\NHẬT\TK004|ja|1080p
+    TK005|https://www.youtube.com/@test|D:\MMO\NHẬT\TK005|ja|1080p
+    """
+    try:
+        results = await asyncio.to_thread(
+            channel_service.bulk_import_channels, db=db, raw_text=request.raw_text
+        )
+
+        # Count statistics
+        created = sum(1 for r in results if r["status"] == "created")
+        updated = sum(1 for r in results if r["status"] == "updated")
+        failed = sum(1 for r in results if r["status"] == "failed")
+
+        return ChannelImportResponse(
+            results=[ChannelImportResult(**r) for r in results],
+            total=len(results),
+            created=created,
+            updated=updated,
+            failed=failed,
+        )
+
+    except Exception as e:
+        logger.exception(f"Failed to import channels: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to import channels: {str(e)}",
         )

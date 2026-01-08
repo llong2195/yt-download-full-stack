@@ -11,6 +11,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from src.models import Base, engine
 from src.utils.config import settings
+from sqlalchemy.orm import Session
+from src.models.global_settings import GlobalSettings
 
 
 def main():
@@ -42,6 +44,29 @@ def main():
     print("\n🗄️  Creating database tables...")
     Base.metadata.create_all(bind=engine)
     print(f"   ✅ Database created at: {settings.DATABASE_URL}")
+
+    # Create GlobalSettings singleton row if doesn't exist
+    print("\n⚙️  Initializing global settings...")
+
+    with Session(engine) as session:
+        global_settings = session.query(GlobalSettings).filter_by(id=1).first()
+        if not global_settings:
+            global_settings = GlobalSettings(
+                id=1,
+                default_download_path="./download",
+                default_subtitle_language="en",
+                default_video_quality="best",
+            )
+            session.add(global_settings)
+            session.commit()
+            print("   ✅ GlobalSettings singleton created with defaults:")
+            print(f"      - Download path: {global_settings.default_download_path}")
+            print(
+                f"      - Subtitle language: {global_settings.default_subtitle_language}"
+            )
+            print(f"      - Video quality: {global_settings.default_video_quality}")
+        else:
+            print("   ✅ GlobalSettings already exists")
 
     # List all tables and indexes
     print("\n📊 Database schema verification:")

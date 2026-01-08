@@ -2,21 +2,22 @@
 
 import re
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 # YouTube URL patterns
 YOUTUBE_PATTERNS = {
     "channel": [
-        r"youtube\.com/channel/([a-zA-Z0-9_-]+)",
-        r"youtube\.com/c/([a-zA-Z0-9_-]+)",
-        r"youtube\.com/@([a-zA-Z0-9_-]+)",
-        r"youtube\.com/user/([a-zA-Z0-9_-]+)",
+        r"youtube\.com/channel/([^/?#]+)",
+        r"youtube\.com/c/([^/?#]+)",
+        r"youtube\.com/@([^/?#]+)",
+        r"youtube\.com/user/([^/?#]+)",
     ],
     "video": [
         r"youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})",
         r"youtu\.be/([a-zA-Z0-9_-]{11})",
         r"youtube\.com/embed/([a-zA-Z0-9_-]{11})",
         r"youtube\.com/v/([a-zA-Z0-9_-]{11})",
+        r"youtube\.com/shorts/([a-zA-Z0-9_-]{11})",
     ],
 }
 
@@ -50,14 +51,17 @@ def is_youtube_url(url: str, url_type: str | None = None) -> bool:
     if not is_valid_url(url):
         return False
 
-    patterns = []
+    url = unquote(url)
+
     if url_type:
         patterns = YOUTUBE_PATTERNS.get(url_type, [])
     else:
-        patterns = YOUTUBE_PATTERNS["channel"] + YOUTUBE_PATTERNS["video"]
+        patterns = YOUTUBE_PATTERNS.get("channel", []) + YOUTUBE_PATTERNS.get(
+            "video", []
+        )
 
     for pattern in patterns:
-        if re.search(pattern, url):
+        if re.search(pattern, url, re.IGNORECASE):
             return True
 
     return False
@@ -129,3 +133,148 @@ def sanitize_path(path: str) -> str:
     parts = Path(path).parts
     sanitized_parts = [sanitize_filename(part) for part in parts]
     return str(Path(*sanitized_parts))
+
+
+# ============================================================================
+# Video Quality and Subtitle Language Validation
+# ============================================================================
+
+VALID_QUALITY_KEYWORDS = ["best", "worst", "bestaudio", "bestvideo"]
+VALID_RESOLUTIONS = [
+    "2160p",
+    "1440p",
+    "1080p",
+    "720p",
+    "480p",
+    "360p",
+    "240p",
+    "144p",
+]
+VALID_LANGUAGES = [
+    "en",
+    "ja",
+    "ko",
+    "zh",
+    "vi",
+    "es",
+    "fr",
+    "de",
+    "ru",
+    "ar",
+    "pt",
+    "it",
+    "th",
+    "pl",
+    "nl",
+    "tr",
+    "sv",
+    "id",
+    "hi",
+    "cs",
+]
+
+
+def validate_video_quality(quality: str | None) -> bool:
+    """Validate video quality setting.
+
+    Args:
+        quality: Video quality string (e.g., '1080p', 'best')
+
+    Returns:
+        True if valid quality, False otherwise
+    """
+    if quality is None:
+        return True
+    return quality in VALID_QUALITY_KEYWORDS or quality in VALID_RESOLUTIONS
+
+
+def validate_subtitle_language(language: str | None) -> bool:
+    """Validate subtitle language code.
+
+    Args:
+        language: ISO 639-1 language code (e.g., 'en', 'ja')
+
+    Returns:
+        True if valid language code, False otherwise
+    """
+    if language is None:
+        return True
+    return len(language) == 2 and language.lower() in VALID_LANGUAGES
+
+
+def validate_download_path(path: str) -> tuple[bool, str | None]:
+    """Validate download path.
+
+    Args:
+        path: Download path string
+
+    Returns:
+        Tuple of (is_valid, error_message)
+    """
+    if not path or not path.strip():
+        return False, "Download path cannot be empty"
+
+    # Check for invalid filesystem characters
+    # Note: Allow colon for Windows drive letters (e.g., D:\path)
+    invalid_chars = '<>"|?*'
+
+    # For Windows paths, colon is only valid at position 1 (drive letter)
+    # Check if this is a Windows absolute path (e.g., C:\path, D:\MMO)
+    is_windows_absolute = (
+        len(path) >= 3
+        and path[0].isalpha()
+        and path[1] == ":"
+        and path[2] in ("\\", "/")
+    )
+
+    # If not a Windows absolute path, colon is invalid anywhere
+    if not is_windows_absolute and ":" in path:
+        return False, "Path contains invalid character: :"
+
+    # If Windows absolute path, colon is invalid anywhere except position 1
+    if is_windows_absolute and path.count(":") > 1:
+        return False, "Path contains invalid character: : (multiple colons)"
+
+    # Check other invalid characters
+    for char in invalid_chars:
+        if char in path:
+            return (
+                False,
+                f"Path contains invalid character: {char}",
+            )
+
+    # Check path length (leave room for filenames)
+    if len(path) > 250:
+        return False, "Path too long (max 250 characters)"
+
+    # Check for Windows reserved names
+    reserved_names = [
+        "CON",
+        "PRN",
+        "AUX",
+        "NUL",
+        "COM1",
+        "COM2",
+        "COM3",
+        "COM4",
+        "COM5",
+        "COM6",
+        "COM7",
+        "COM8",
+        "COM9",
+        "LPT1",
+        "LPT2",
+        "LPT3",
+        "LPT4",
+        "LPT5",
+        "LPT6",
+        "LPT7",
+        "LPT8",
+        "LPT9",
+    ]
+    path_obj = Path(path)
+    for part in path_obj.parts:
+        if part.upper() in reserved_names:
+            return False, f"Path contains reserved name: {part}"
+
+    return True, None

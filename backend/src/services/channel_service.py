@@ -8,10 +8,17 @@ import yt_dlp.utils
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from src.models.download_history import DownloadHistory
-from src.repository import channel_repo
+from src.repository import channel_repo, settings_repo
 from src.utils.config import settings
 from src.utils.logger import get_logger
-from src.utils.validators import extract_channel_id, is_youtube_url, sanitize_filename
+from src.utils.validators import (
+    extract_channel_id,
+    is_youtube_url,
+    sanitize_filename,
+    validate_download_path,
+    validate_subtitle_language,
+    validate_video_quality,
+)
 
 logger = get_logger(__name__)
 
@@ -30,6 +37,18 @@ class InvalidChannelURLError(ChannelServiceError):
 
 class DuplicateChannelError(ChannelServiceError):
     """Raised when channel already exists."""
+
+    pass
+
+
+class DuplicateNameError(ChannelServiceError):
+    """Raised when custom channel name already exists."""
+
+    pass
+
+
+class ValidationError(ChannelServiceError):
+    """Raised when validation fails."""
 
     pass
 
@@ -53,6 +72,13 @@ def extract_channel_info(url: str) -> Dict[str, str]:
         MetadataFetchError: If extraction fails
     """
     try:
+        cookies_path = settings.yt_dlp_cookies_path
+        if cookies_path and not cookies_path.exists():
+            raise MetadataFetchError(
+                f"Configured cookies file not found at {cookies_path}. "
+                "Set YT_DLP_COOKIES_FILE to a valid cookies.txt file."
+            )
+
         ydl_opts: yt_dlp._Params = {
             "quiet": True,
             "no_warnings": True,
@@ -88,6 +114,10 @@ def extract_channel_info(url: str) -> Dict[str, str]:
             "cookiesfrombrowser": None,
             "force_generic_extractor": False,
         }
+
+        if cookies_path:
+            logger.info(f"Using cookies file for yt-dlp: {cookies_path}")
+            ydl_opts["cookiefile"] = str(cookies_path)
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
@@ -143,12 +173,23 @@ def create_channel_directory(channel_id: str) -> str:
     return str(channel_path.absolute())
 
 
-def validate_and_add_channel(db: Session, url: str) -> Dict:
+def validate_and_add_channel(
+    db: Session,
+    url: str,
+    custom_name: str,
+    download_path: str | None = None,
+    subtitle_language: str | None = None,
+    video_quality: str | None = None,
+) -> Dict:
     """Validate URL, extract metadata, and add channel to database.
 
     Args:
         db: Database session
         url: YouTube channel URL
+        custom_name: User-defined custom channel name
+        download_path: Optional custom download path
+        subtitle_language: Optional subtitle language preference
+        video_quality: Optional video quality preference
 
     Returns:
         Dictionary with channel info
@@ -156,44 +197,178 @@ def validate_and_add_channel(db: Session, url: str) -> Dict:
     Raises:
         InvalidChannelURLError: If URL is invalid
         DuplicateChannelError: If channel already exists
+        DuplicateNameError: If custom name already exists
+        ValidationError: If validation fails
         MetadataFetchError: If metadata cannot be fetched
     """
     # Validate URL format
     if not is_youtube_url(url, "channel"):
         raise InvalidChannelURLError("Invalid YouTube channel URL")
 
-    # Extract channel information
+    # Validate custom name uniqueness
+    if channel_repo.get_channel_by_name(db, custom_name):
+        raise DuplicateNameError(
+            f"A channel with the name '{custom_name}' already exists"
+        )
+
+    # Validate subtitle language if provided
+    if subtitle_language and not validate_subtitle_language(subtitle_language):
+        raise ValidationError(
+            f"Invalid subtitle language: '{subtitle_language}'. "
+            "Must be a 2-letter ISO 639-1 code (e.g., 'en', 'ja')"
+        )
+
+    # Validate video quality if provided
+    if video_quality and not validate_video_quality(video_quality):
+        raise ValidationError(
+            f"Invalid video quality: '{video_quality}'. "
+            "Allowed values: best, worst, 1080p, 720p, 480p, 360p, 240p, 144p"
+        )
+
+    # Extract channel information from YouTube
     channel_info = extract_channel_info(url)
 
-    # Check for duplicates
+    # Check for duplicate YouTube channel
     existing = channel_repo.get_channel_by_youtube_id(db, channel_info["channel_id"])
-
     if existing:
-        # Recreate download directory
-        download_path = create_channel_directory(channel_info["name"])
-        raise DuplicateChannelError(f"Channel '{existing.name}' already exists")
+        raise DuplicateChannelError(
+            f"This YouTube channel is already tracked as '{existing.name}'"
+        )
 
-    # Recreate download directory
-    download_path = create_channel_directory(channel_info["name"])
+    # Determine download path
+    if download_path:
+        # Validate custom path
+        is_valid_path, path_error = validate_download_path(download_path)
+        if not is_valid_path:
+            raise ValidationError(f"Invalid download path: {path_error}")
+        final_download_path = download_path
+    else:
+        # Use global default + custom name
+        global_settings = settings_repo.get_settings(db)
+        base_path = (
+            global_settings.default_download_path
+            if global_settings
+            else settings.DOWNLOAD_DIR
+        )
+        final_download_path = str(Path(base_path) / sanitize_filename(custom_name))
+
+    # Create download directory
+    Path(final_download_path).mkdir(parents=True, exist_ok=True)
 
     # Save to database
     channel = channel_repo.create_channel(
         db=db,
         channel_id=channel_info["channel_id"],
-        name=channel_info["name"],
+        title=channel_info["name"],  # YouTube's channel title
+        name=custom_name,  # User's custom name
         url=channel_info["url"],
-        download_path=download_path,
+        download_path=final_download_path,
+        subtitle_language=subtitle_language,
+        video_quality=video_quality,
     )
 
-    logger.info(f"Added channel: {channel.name} (ID: {channel.channel_id})")
+    logger.info(
+        f"Added channel: '{custom_name}' (YouTube: {channel_info['name']}, "
+        f"ID: {channel.channel_id})"
+    )
 
     return {
         "id": channel.id,
         "channel_id": channel.channel_id,
+        "title": channel.title,
         "name": channel.name,
         "url": channel.url,
         "download_path": channel.download_path,
+        "subtitle_language": channel.subtitle_language,
+        "video_quality": channel.video_quality,
         "date_added": channel.date_added,
+        "last_updated": channel.last_updated,
+    }
+
+
+def update_channel(
+    db: Session,
+    channel_id: int,
+    name: str | None = None,
+    download_path: str | None = None,
+    subtitle_language: str | None = None,
+    video_quality: str | None = None,
+) -> Dict | None:
+    """Update channel settings.
+
+    Args:
+        db: Database session
+        channel_id: Internal channel ID
+        name: New custom name (optional)
+        download_path: New download path (optional)
+        subtitle_language: New subtitle language (optional)
+        video_quality: New video quality (optional)
+
+    Returns:
+        Updated channel info
+
+    Raises:
+        DuplicateNameError: If new name already exists
+        ValidationError: If validation fails
+    """
+    # Get existing channel
+    channel = channel_repo.get_channel_by_id(db, channel_id)
+    if not channel:
+        return None
+
+    # Validate name uniqueness if changing
+    if name and name != channel.name:
+        existing = channel_repo.get_channel_by_name(db, name)
+        if existing:
+            raise DuplicateNameError(f"A channel with the name '{name}' already exists")
+
+    # Validate download path if provided
+    if download_path:
+        is_valid_path, path_error = validate_download_path(download_path)
+        if not is_valid_path:
+            raise ValidationError(f"Invalid download path: {path_error}")
+
+    # Validate subtitle language if provided
+    if subtitle_language and not validate_subtitle_language(subtitle_language):
+        raise ValidationError(
+            f"Invalid subtitle language: '{subtitle_language}'. "
+            "Must be a 2-letter ISO 639-1 code (e.g., 'en', 'ja')"
+        )
+
+    # Validate video quality if provided
+    if video_quality and not validate_video_quality(video_quality):
+        raise ValidationError(
+            f"Invalid video quality: '{video_quality}'. "
+            "Allowed values: best, worst, 1080p, 720p, 480p, 360p, 240p, 144p"
+        )
+
+    # Update channel
+    updated_channel = channel_repo.update_channel(
+        db=db,
+        channel_id=channel_id,
+        name=name,
+        download_path=download_path,
+        subtitle_language=subtitle_language,
+        video_quality=video_quality,
+    )
+
+    if not updated_channel:
+        return None
+
+    if updated_channel:
+        logger.info(f"Updated channel: {updated_channel.name} (ID: {channel_id})")
+
+    return {
+        "id": updated_channel.id,
+        "channel_id": updated_channel.channel_id,
+        "title": updated_channel.title,
+        "name": updated_channel.name,
+        "url": updated_channel.url,
+        "download_path": updated_channel.download_path,
+        "subtitle_language": updated_channel.subtitle_language,
+        "video_quality": updated_channel.video_quality,
+        "date_added": updated_channel.date_added,
+        "last_updated": updated_channel.last_updated,
     }
 
 
@@ -215,7 +390,7 @@ def get_all_channels_with_stats(db: Session):
             db.query(func.count(DownloadHistory.id))
             .filter(
                 DownloadHistory.channel_id == channel.id,
-                DownloadHistory.success,
+                DownloadHistory.success == True,
             )
             .scalar()
         )
@@ -224,9 +399,12 @@ def get_all_channels_with_stats(db: Session):
             {
                 "id": channel.id,
                 "channel_id": channel.channel_id,
+                "title": channel.title,
                 "name": channel.name,
                 "url": channel.url,
                 "download_path": channel.download_path,
+                "subtitle_language": channel.subtitle_language,
+                "video_quality": channel.video_quality,
                 "date_added": channel.date_added,
                 "last_updated": channel.last_updated,
                 "video_count": video_count or 0,
@@ -259,3 +437,207 @@ def delete_channel_with_files(db: Session, channel_id: int) -> bool:
         # Users can manually delete the directory if needed
 
     return success
+
+
+def bulk_import_channels(
+    db: Session,
+    raw_text: str,
+) -> list[dict]:
+    """Bulk import channels from raw text. Creates new channels or updates existing ones.
+
+    Args:
+        db: Database session
+        raw_text: Raw text with format: <name>|<channel_url>|<download_path>|<subtitle_language>|<video_quality> per line
+
+    Returns:
+        List of import results with status (created/updated/failed) for each line
+    """
+    results = []
+    lines = raw_text.strip().split("\n")
+
+    for line_number, line in enumerate(lines, start=1):
+        line = line.strip()
+        if not line:
+            continue
+
+        try:
+            # Parse line format: name|url|download_path
+            parts = line.split("|")
+            if len(parts) < 2:
+                results.append(
+                    {
+                        "line_number": line_number,
+                        "name": "",
+                        "url": "",
+                        "status": "failed",
+                        "error": "Invalid format. Expected: <name>|<channel_url>|<download_path>|<subtitle_language>|<video_quality>",
+                    }
+                )
+                continue
+
+            name = parts[0].strip()
+            url = parts[1].strip()
+            download_path = (
+                parts[2].strip() if len(parts) > 2 and parts[2].strip() else None
+            )
+            subtitle_language = (
+                parts[3].strip() if len(parts) > 3 and parts[3].strip() else None
+            )
+            video_quality = (
+                parts[4].strip() if len(parts) > 4 and parts[4].strip() else None
+            )
+
+            if not name or not url:
+                results.append(
+                    {
+                        "line_number": line_number,
+                        "name": name,
+                        "url": url,
+                        "status": "failed",
+                        "error": "Name and URL are required",
+                    }
+                )
+                continue
+
+            # Validate URL format
+            if not is_youtube_url(url, "channel"):
+                results.append(
+                    {
+                        "line_number": line_number,
+                        "name": name,
+                        "url": url,
+                        "status": "failed",
+                        "error": "Invalid YouTube channel URL",
+                    }
+                )
+                continue
+
+            # Extract channel info from YouTube
+            try:
+                channel_info = extract_channel_info(url)
+            except MetadataFetchError as e:
+                results.append(
+                    {
+                        "line_number": line_number,
+                        "name": name,
+                        "url": url,
+                        "status": "failed",
+                        "error": f"Failed to fetch channel metadata: {str(e)}",
+                    }
+                )
+                continue
+
+            channel_id = channel_info["channel_id"]
+            title = channel_info["name"]
+            canonical_url = channel_info["url"]
+
+            # Check if channel already exists by channel_id
+            existing_channel = channel_repo.get_channel_by_youtube_id(db, channel_id)
+
+            if existing_channel:
+                # Update existing channel
+                try:
+                    # Update channel
+                    updated_channel = update_channel(
+                        db=db,
+                        channel_id=existing_channel.id,
+                        name=name,
+                        download_path=download_path,
+                        subtitle_language=subtitle_language,
+                        video_quality=video_quality,
+                    )
+
+                    results.append(
+                        {
+                            "line_number": line_number,
+                            "name": name,
+                            "url": url,
+                            "status": "updated",
+                            "channel_id": existing_channel.id,
+                        }
+                    )
+                except Exception as e:
+                    results.append(
+                        {
+                            "line_number": line_number,
+                            "name": name,
+                            "url": url,
+                            "status": "failed",
+                            "error": f"Failed to update channel: {str(e)}",
+                        }
+                    )
+            else:
+                # Create new channel
+                try:
+                    channel = validate_and_add_channel(
+                        db=db,
+                        url=canonical_url,
+                        custom_name=name,
+                        download_path=download_path,
+                        subtitle_language=subtitle_language,
+                        video_quality=video_quality,
+                    )
+
+                    results.append(
+                        {
+                            "line_number": line_number,
+                            "name": name,
+                            "url": url,
+                            "status": "created",
+                            "channel_id": channel["id"],
+                        }
+                    )
+                except DuplicateNameError:
+                    # Name conflict with another channel, try with a suffix
+                    try:
+                        suffix_name = f"{name}_{channel_id[:8]}"
+                        channel = validate_and_add_channel(
+                            db=db,
+                            url=canonical_url,
+                            custom_name=suffix_name,
+                            download_path=download_path,
+                        )
+                        results.append(
+                            {
+                                "line_number": line_number,
+                                "name": suffix_name,
+                                "url": url,
+                                "status": "created",
+                                "channel_id": channel["id"],
+                                "error": f"Name conflict, created as '{suffix_name}'",
+                            }
+                        )
+                    except Exception as e:
+                        results.append(
+                            {
+                                "line_number": line_number,
+                                "name": name,
+                                "url": url,
+                                "status": "failed",
+                                "error": f"Name conflict and failed to create with suffix: {str(e)}",
+                            }
+                        )
+                except Exception as e:
+                    results.append(
+                        {
+                            "line_number": line_number,
+                            "name": name,
+                            "url": url,
+                            "status": "failed",
+                            "error": f"Failed to create channel: {str(e)}",
+                        }
+                    )
+
+        except Exception as e:
+            logger.exception(f"Unexpected error processing line {line_number}: {e}")
+            results.append(
+                {
+                    "line_number": line_number,
+                    "name": "",
+                    "url": "",
+                    "status": "failed",
+                    "error": f"Unexpected error: {str(e)}",
+                }
+            )
+
+    return results

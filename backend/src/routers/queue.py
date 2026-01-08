@@ -162,7 +162,7 @@ async def retry_failed_task(task_id: str, db: Session = Depends(get_db)):
 
         # Re-enqueue the task
         download_video(task.id)
-
+        # download_video.schedule(args=(task.id))
         logger.info(
             f"Retrying task {task_id} as {new_task_id} (attempt {task.retry_count}/3)"
         )
@@ -180,4 +180,57 @@ async def retry_failed_task(task_id: str, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retry task: {str(e)}",
+        )
+
+
+@router.delete("/tasks/{task_id}")
+async def cancel_task(task_id: str, db: Session = Depends(get_db)):
+    """
+    Cancel/delete a task from queue.
+
+    Args:
+        task_id: Task UUID string
+
+    Returns:
+        Success message
+
+    Raises:
+        404: Task not found
+        400: Task cannot be cancelled (already completed)
+    """
+    try:
+        task = download_repo.get_task_by_task_id(db, task_id)
+
+        if not task:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Task {task_id} not found",
+            )
+
+        # Check if task can be cancelled
+        if task.status == "completed":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot cancel completed task. Task already finished successfully.",
+            )
+
+        # Delete the task
+        db.delete(task)
+        db.commit()
+
+        logger.info(f"Task {task_id} cancelled and removed from queue (status was: {task.status})")
+
+        return {
+            "success": True,
+            "message": f"Task {task_id} cancelled successfully",
+            "task_id": task_id,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to cancel task {task_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to cancel task: {str(e)}",
         )

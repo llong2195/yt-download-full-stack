@@ -1,6 +1,6 @@
 """Database configuration and session management."""
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, inspect
 from sqlalchemy.orm import declarative_base, sessionmaker
 from src.utils.config import settings
 
@@ -42,8 +42,6 @@ def verify_indexes():
     Returns:
         dict: Index verification results
     """
-    from sqlalchemy import inspect
-
     inspector = inspect(engine)
     results = {}
 

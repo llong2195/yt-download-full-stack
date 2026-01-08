@@ -5,6 +5,7 @@ from typing import Dict, Optional
 
 import yt_dlp
 import yt_dlp.utils
+from src.utils.config import settings
 from src.utils.logger import get_logger
 from src.utils.validators import extract_video_id
 
@@ -55,12 +56,23 @@ def extract_video_metadata(video_url: str) -> Dict:
         MetadataFetchError: If metadata extraction fails
     """
     try:
+        cookies_path = settings.yt_dlp_cookies_path
+        if cookies_path and not cookies_path.exists():
+            raise MetadataFetchError(
+                f"Configured cookies file not found at {cookies_path}. "
+                "Set YT_DLP_COOKIES_FILE to a valid cookies.txt file."
+            )
+
         ydl_opts: yt_dlp._Params = {
             "quiet": True,
             "no_warnings": True,
             "skip_download": "True",
             "extract_flat": False,
         }
+
+        if cookies_path:
+            logger.info(f"Using cookies file for yt-dlp: {cookies_path}")
+            ydl_opts["cookiefile"] = str(cookies_path)
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=False)
@@ -110,6 +122,18 @@ def extract_video_metadata(video_url: str) -> Dict:
         error_msg = str(e)
         if "Video unavailable" in error_msg or "not available" in error_msg:
             raise VideoUnavailableError(f"Video unavailable: {error_msg}")
+        if "Sign in to confirm" in error_msg:
+            hint = (
+                "Enable YouTube cookies by setting YT_DLP_COOKIES_FILE in backend/.env"
+                " to a cookies.txt exported from your browser."
+                " See https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp"
+            )
+            logger.warning(
+                "YouTube sign-in challenge detected; cookies hint sent to user."
+            )
+            raise MetadataFetchError(
+                f"Failed to fetch video metadata: {error_msg}. {hint}"
+            )
         logger.error(f"yt-dlp error extracting video metadata: {e}")
         raise MetadataFetchError(f"Failed to fetch video metadata: {error_msg}")
 
