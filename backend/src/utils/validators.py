@@ -2,21 +2,22 @@
 
 import re
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urlparse, unquote
 
 # YouTube URL patterns
 YOUTUBE_PATTERNS = {
     "channel": [
-        r"youtube\.com/channel/([a-zA-Z0-9_-]+)",
-        r"youtube\.com/c/([a-zA-Z0-9_-]+)",
-        r"youtube\.com/@([a-zA-Z0-9_-]+)",
-        r"youtube\.com/user/([a-zA-Z0-9_-]+)",
+        r"youtube\.com/channel/([^/?#]+)",
+        r"youtube\.com/c/([^/?#]+)",
+        r"youtube\.com/@([^/?#]+)",
+        r"youtube\.com/user/([^/?#]+)",
     ],
     "video": [
         r"youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})",
         r"youtu\.be/([a-zA-Z0-9_-]{11})",
         r"youtube\.com/embed/([a-zA-Z0-9_-]{11})",
         r"youtube\.com/v/([a-zA-Z0-9_-]{11})",
+        r"youtube\.com/shorts/([a-zA-Z0-9_-]{11})",
     ],
 }
 
@@ -50,14 +51,17 @@ def is_youtube_url(url: str, url_type: str | None = None) -> bool:
     if not is_valid_url(url):
         return False
 
-    patterns = []
+    url = unquote(url)
+
     if url_type:
         patterns = YOUTUBE_PATTERNS.get(url_type, [])
     else:
-        patterns = YOUTUBE_PATTERNS["channel"] + YOUTUBE_PATTERNS["video"]
+        patterns = YOUTUBE_PATTERNS.get("channel", []) + YOUTUBE_PATTERNS.get(
+            "video", []
+        )
 
     for pattern in patterns:
-        if re.search(pattern, url):
+        if re.search(pattern, url, re.IGNORECASE):
             return True
 
     return False
@@ -213,24 +217,24 @@ def validate_download_path(path: str) -> tuple[bool, str | None]:
     # Check for invalid filesystem characters
     # Note: Allow colon for Windows drive letters (e.g., D:\path)
     invalid_chars = '<>"|?*'
-    
+
     # For Windows paths, colon is only valid at position 1 (drive letter)
     # Check if this is a Windows absolute path (e.g., C:\path, D:\MMO)
     is_windows_absolute = (
-        len(path) >= 3 
-        and path[0].isalpha() 
-        and path[1] == ':' 
-        and path[2] in ('\\', '/')
+        len(path) >= 3
+        and path[0].isalpha()
+        and path[1] == ":"
+        and path[2] in ("\\", "/")
     )
-    
+
     # If not a Windows absolute path, colon is invalid anywhere
-    if not is_windows_absolute and ':' in path:
+    if not is_windows_absolute and ":" in path:
         return False, "Path contains invalid character: :"
-    
+
     # If Windows absolute path, colon is invalid anywhere except position 1
-    if is_windows_absolute and path.count(':') > 1:
+    if is_windows_absolute and path.count(":") > 1:
         return False, "Path contains invalid character: : (multiple colons)"
-    
+
     # Check other invalid characters
     for char in invalid_chars:
         if char in path:
