@@ -20,11 +20,11 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Input } from '../components/ui/input';
+import { fetchChannels } from '../services/channelApi';
 import { fetchHistory, fetchHistoryStats, type HistoryFilters } from '../services/historyApi';
+import type { Channel } from '../types/channel';
 import type { DownloadHistory, HistoryStatsResponse } from '../types/download';
 import { formatFileSize } from '../utils/formatters';
-import { fetchChannels } from '../services/channelApi';
-import type { Channel } from '../types/channel';
 
 export default function History() {
   const [history, setHistory] = useState<DownloadHistory[]>([]);
@@ -43,8 +43,9 @@ export default function History() {
   
   // Pagination
   const [total, setTotal] = useState(0);
-  const [offset, setOffset] = useState(0);
+  const [, setOffset] = useState(0);
   const [limit] = useState(50);
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch history with filters
   const loadHistory = useCallback(async (newOffset: number = 0) => {
@@ -123,10 +124,6 @@ export default function History() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Load more (pagination)
-  const handleLoadMore = () => {
-    loadHistory(offset + limit);
-  };
 
   // Clear filters
   const handleClearFilters = () => {
@@ -137,8 +134,19 @@ export default function History() {
     setSuccessFilter(undefined);
   };
 
+  const handleApplyFilters = () => {
+    setCurrentPage(1); // Reset to the first page
+    loadHistory(0); // Fetch data with updated filters
+  };
+
+  const handlePageChange = (page: number) => {
+    const newOffset = (page - 1) * limit;
+    setCurrentPage(page);
+    loadHistory(newOffset);
+  };
+
   const hasFilters = search || dateFrom || dateTo || successFilter !== undefined;
-  const hasMore = offset + limit < total;
+ 
 
   return (
     <div className="mx-auto py-6 sm:py-8 px-4 max-w-6xl">
@@ -313,6 +321,13 @@ export default function History() {
         </CardContent>
       </Card>
 
+      {/* Filters Section */}
+      <div className="flex items-center gap-4 mb-4">
+        <Button onClick={handleApplyFilters} className="bg-primary text-white">
+          Apply Filters
+        </Button>
+      </div>
+
       {/* History List */}
       <Card className="border-primary/20">
         <CardHeader>
@@ -362,30 +377,29 @@ export default function History() {
                   );
                 })}
               </div>
-
-              {/* Load More */}
-              {hasMore && (
-                <div className="mt-6 text-center">
-                  <Button
-                    variant="outline"
-                    onClick={handleLoadMore}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        Loading...
-                      </>
-                    ) : (
-                      `Load More (${total - offset - limit} remaining)`
-                    )}
-                  </Button>
+              {/* Loading Indicator */}
+              {isLoading && (
+                <div className="text-center py-4">
+                  <span>Loading...</span>
                 </div>
               )}
             </>
           )}
         </CardContent>
       </Card>
+
+      {/* Pagination Controls */}
+      <div className="flex justify-center items-center gap-2 mt-4">
+        {Array.from({ length: Math.ceil(total / limit) }, (_, index) => (
+          <Button
+            key={index}
+            onClick={() => handlePageChange(index + 1)}
+            className={`px-3 py-1 ${currentPage === index + 1 ? 'bg-primary text-white' : 'bg-gray-200'}`}
+          >
+            {index + 1}
+          </Button>
+        ))}
+      </div>
     </div>
   );
 }
