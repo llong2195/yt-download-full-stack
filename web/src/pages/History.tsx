@@ -4,27 +4,24 @@
 
 import {
   AlertCircle,
-  CheckCircle2,
   Clock,
   Download,
-  Filter,
   HardDrive,
   History as HistoryIcon,
   RefreshCw,
-  Search,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 import { HistoryItem } from '../components/HistoryItem';
 import { Alert, AlertDescription, AlertTitle } from '../components/ui/alert';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
-import { Input } from '../components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { fetchChannels } from '../services/channelApi';
 import { fetchHistory, fetchHistoryStats, type HistoryFilters } from '../services/historyApi';
 import type { Channel } from '../types/channel';
 import type { DownloadHistory, HistoryStatsResponse } from '../types/download';
 import { formatFileSize } from '../utils/formatters';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function History() {
   const [history, setHistory] = useState<DownloadHistory[]>([]);
@@ -46,6 +43,7 @@ export default function History() {
   const [, setOffset] = useState(0);
   const [limit] = useState(50);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Fetch history with filters
   const loadHistory = useCallback(async (newOffset: number = 0) => {
@@ -145,6 +143,10 @@ export default function History() {
     loadHistory(newOffset);
   };
 
+  const toggleFilterSection = () => {
+    setIsFilterOpen((prev) => !prev);
+  };
+
   const hasFilters = search || dateFrom || dateTo || successFilter !== undefined;
  
 
@@ -185,10 +187,10 @@ export default function History() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Download className="h-4 w-4 text-blue-600" />
                   Total Downloads
-                </CardDescription>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{stats.total_downloads}</div>
@@ -201,10 +203,10 @@ export default function History() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <HardDrive className="h-4 w-4 text-purple-600" />
                   Total Size
-                </CardDescription>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold">{formatFileSize(stats.total_size_bytes)}</div>
@@ -213,10 +215,10 @@ export default function History() {
 
             <Card>
               <CardHeader className="pb-2">
-                <CardDescription className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-orange-600" />
                   Avg Download Time
-                </CardDescription>
+                </CardTitle>
               </CardHeader> 
             </Card>
           </div>
@@ -232,101 +234,57 @@ export default function History() {
         </Alert>
       )}
 
-      {/* Filters */}
-      <Card className="mb-6 border-primary/20">
+      {/* Filters Section */}
+      <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Filter className="h-5 w-5 text-primary" />
-            Filters
+          <CardTitle className="flex items-center justify-between">
+            <span>Filters</span>
+            <button
+              onClick={toggleFilterSection}
+              className="text-primary focus:outline-none"
+            >
+              {isFilterOpen ? <ChevronUp /> : <ChevronDown />}
+            </button>
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="lg:col-span-2">
-              <label className="text-sm font-medium mb-2 block">Search Videos</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search video titles..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  className="pl-10"
+        {isFilterOpen && (
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <textarea
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                placeholder="Enter search terms (one per line)"
+                className="w-full p-3 border rounded-md focus:ring-2 focus:ring-primary focus:outline-none"
+                style={{ height: '100px' }} // Adjusted height to match input fields
+              />
+              <div className="flex flex-col gap-2">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="p-3 border rounded-md focus:ring-2 focus:ring-primary focus:outline-none"
+                  placeholder="From Date"
+                />
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="p-3 border rounded-md focus:ring-2 focus:ring-primary focus:outline-none"
+                  placeholder="To Date"
                 />
               </div>
             </div>
-
-            {/* Date From */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">From Date</label>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-              />
-            </div>
-
-            {/* Date To */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">To Date</label>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 mt-4">
-            {/* Success Filter */}
-            <div className="flex gap-2">
-              <Button
-                variant={successFilter === undefined ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSuccessFilter(undefined)}
-              >
-                All
-              </Button>
-              <Button
-                variant={successFilter === true ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSuccessFilter(true)}
-              >
-                <CheckCircle2 className="h-4 w-4 mr-1" />
-                Success
-              </Button>
-              <Button
-                variant={successFilter === false ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSuccessFilter(false)}
-              >
-                <AlertCircle className="h-4 w-4 mr-1" />
-                Failed
-              </Button>
-            </div>
-
-            {/* Clear Filters */}
-            {hasFilters && (
-              <Button variant="ghost" size="sm" onClick={handleClearFilters}>
+            <div className="flex justify-end gap-4 mt-4">
+              <Button onClick={handleClearFilters} className="bg-gray-200 text-gray-700 hover:bg-gray-300">
                 Clear Filters
               </Button>
-            )}
-
-            {/* Results Count */}
-            <div className="ml-auto text-sm text-muted-foreground">
-              Showing {history.length} of {total} records
+              <Button onClick={handleApplyFilters} className="bg-primary text-white hover:bg-primary-dark">
+                Apply Filters
+              </Button>
             </div>
-          </div>
-        </CardContent>
+          </CardContent>
+        )}
       </Card>
-
-      {/* Filters Section */}
-      <div className="flex items-center gap-4 mb-4">
-        <Button onClick={handleApplyFilters} className="bg-primary text-white">
-          Apply Filters
-        </Button>
-      </div>
 
       {/* History List */}
       <Card className="border-primary/20">
@@ -334,14 +292,9 @@ export default function History() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <CardTitle className="text-xl">Download History</CardTitle>
-              <CardDescription className="mt-1">
-                {hasFilters && (
-                  <Badge variant="outline" className="mr-2">
-                    Filtered
-                  </Badge>
-                )}
-                {total} record(s) found
-              </CardDescription>
+              <Badge variant="outline" className="mr-2">
+                Filtered
+              </Badge>
             </div>
           </div>
         </CardHeader>

@@ -2,8 +2,11 @@
  * History API client functions
  */
 
-import type { HistoryListResponse, HistoryStatsResponse } from '../types/download';
-import { fetchApi } from './api';
+import type {
+  HistoryListResponse,
+  HistoryStatsResponse,
+} from "../types/download";
+import { fetchApi } from "./api";
 
 export interface HistoryFilters {
   search?: string;
@@ -19,29 +22,50 @@ const HISTORY_BASE = "/history";
 /**
  * Fetch download history with optional filters
  */
-export async function fetchHistory(filters: HistoryFilters = {}): Promise<HistoryListResponse> {
+export async function fetchHistory(
+  filters: HistoryFilters = {}
+): Promise<HistoryListResponse> {
   const params = new URLSearchParams();
 
-  if (filters.search) params.append('search', filters.search);
-  if (filters.date_from) params.append('date_from', filters.date_from);
-  if (filters.date_to) params.append('date_to', filters.date_to);
-  if (filters.success !== undefined) params.append('success', String(filters.success));
-  if (filters.limit) params.append('limit', String(filters.limit));
-  if (filters.offset) params.append('offset', String(filters.offset));
+  if (filters.search) {
+    const searchTerms = filters.search
+      .split("\n")
+      .map((term) => term.trim())
+      .filter((term) => term);
+    if (searchTerms.length > 0) {
+      console.log(searchTerms);
+
+      params.append("search", searchTerms.join("|")); // Use '|' as OR-like separator
+    }
+  }
+
+  if (filters.date_from) params.append("date_from", filters.date_from);
+  if (filters.date_to) params.append("date_to", filters.date_to);
+  if (filters.success !== undefined)
+    params.append("success", String(filters.success));
+  if (filters.limit) params.append("limit", String(filters.limit));
+  if (filters.offset) params.append("offset", String(filters.offset));
 
   const queryString = params.toString();
-  const url = queryString ? `${HISTORY_BASE}?${queryString}` : `${HISTORY_BASE}`;
+  const url = queryString
+    ? `${HISTORY_BASE}?${queryString}`
+    : `${HISTORY_BASE}`;
 
   return fetchApi<HistoryListResponse>(url, {
-    method: 'GET',
+    method: "GET",
   });
 }
 
 /**
  * Fetch history statistics for a given period
  */
-export async function fetchHistoryStats(period: '7d' | '30d' | '90d' | 'all' = 'all'): Promise<HistoryStatsResponse> {
-  return fetchApi<HistoryStatsResponse>(`${HISTORY_BASE}/stats?period=${period}`, {
-    method: 'GET',
-  });
+export async function fetchHistoryStats(
+  period: "7d" | "30d" | "90d" | "all" = "all"
+): Promise<HistoryStatsResponse> {
+  return fetchApi<HistoryStatsResponse>(
+    `${HISTORY_BASE}/stats?period=${period}`,
+    {
+      method: "GET",
+    }
+  );
 }
