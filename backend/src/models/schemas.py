@@ -226,7 +226,6 @@ class DownloadHistoryResponse(BaseModel):
     duration: Optional[int] = None
     file_path: Optional[str] = None
     file_size: Optional[int] = None
-    video_metadata: Optional[str] = None
     download_duration_seconds: int
     success: bool
     error_code: Optional[str] = None

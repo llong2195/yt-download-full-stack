@@ -306,7 +306,6 @@ def download_video(task_id: str) -> bool:
                 duration=info.get("duration"),
                 file_path=downloaded_file,
                 file_size=file_size,
-                video_metadata=str(info) if info else None,
                 download_duration_seconds=download_duration,
                 success=True,
             )

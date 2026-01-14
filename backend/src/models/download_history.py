@@ -40,9 +40,6 @@ class DownloadHistory(Base):
     duration: Mapped[int | None] = mapped_column(Integer, nullable=True)
     file_path: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     file_size: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
-    video_metadata: Mapped[str | None] = mapped_column(
-        String, nullable=True
-    )  # JSON stored as string (renamed from 'metadata')
     download_duration_seconds: Mapped[int] = mapped_column(Integer, nullable=False)
     success: Mapped[bool] = mapped_column(Boolean, nullable=False, index=True)
     error_code: Mapped[str | None] = mapped_column(String(50), nullable=True)

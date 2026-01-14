@@ -38,7 +38,6 @@ export interface DownloadHistory {
   duration?: number; // in seconds
   file_path?: string;
   file_size?: number; // in bytes
-  video_metadata?: string; // JSON string
   download_duration_seconds: number;
   success: boolean;
   error_code?: string;

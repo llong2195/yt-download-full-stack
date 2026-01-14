@@ -48,7 +48,7 @@
 - [x] T013 [P] Create backend/models/channel.py with Channel SQLAlchemy model (id, channel_id, name, url, download_path, date_added, last_updated)
 - [x] T014 [P] SKIPPED - Video model removed per data model update (video info stored in DownloadHistory)
 - [x] T015 [P] Create backend/models/download_task.py with DownloadTask SQLAlchemy model (id, task_id, channel_id FK, video_id STRING, video_url, status, progress_percent, error_message, retry_count, created_at, started_at, completed_at)
-- [x] T016 [P] Create backend/models/download_history.py with DownloadHistory SQLAlchemy model (id, channel_id FK, video_id, video_title, video_url, task_id, download_date, upload_date, duration, file_path, file_size, video_metadata, download_duration_seconds, success, error_code)
+- [x] T016 [P] Create backend/models/download_history.py with DownloadHistory SQLAlchemy model (id, channel_id FK, video_id, video_title, video_url, task_id, download_date, upload_date, duration, file_path, file_size, download_duration_seconds, success, error_code)
 - [x] T017 Create backend/models/schemas.py with Pydantic request/response models for all entities
 - [x] T018 Initialize database by running Base.metadata.create_all(engine) - creates all tables with indexes and constraints
 - [x] T019 Create backend/main.py with FastAPI app, CORS middleware for http://localhost:5173 and chrome-extension://\*
@@ -109,13 +109,13 @@
 - [x] T045 [US2] Add extract_video_id_from_url(url) function to backend/services/youtube_service.py supporting 3 URL patterns (youtube.com/watch, youtu.be, m.youtube.com)
 - [x] T046 [US2] Add auto_create_channel(channel_id, channel_name) function to backend/services/channel_service.py with download_path=downloads/{channel_id}/ (IMPLEMENTED IN download_service.py using existing channel_service functions)
 - [x] T047 [US2] Create backend/services/download_service.py with check_if_downloaded(video_id), check_in_progress(video_id), enqueue_download(channel_id, video_id, video_url) logic
-- [X] T048 [US2] Create backend/tasks/download_tasks.py with Huey task @huey.task: download_video(task_id) using yt-dlp Python library
-- [X] T049 [US2] Add yt-dlp progress hook in backend/tasks/download_tasks.py to update DownloadTask.progress_percent and status in database
-- [X] T050 [US2] Implement retry logic in backend/tasks/download_tasks.py: max 3 retries with exponential backoff (60s, 120s, 240s)
-- [X] T051 [US2] Add file path logic in backend/tasks/download_tasks.py: save to channel's download_path directory (downloads/{channel_id}/{video_id}.mp4)
-- [X] T052 [US2] Create DownloadHistory record in backend/tasks/download_tasks.py on completion with full video metadata (title, duration, file_path, file_size, success, error_code)
+- [x] T048 [US2] Create backend/tasks/download_tasks.py with Huey task @huey.task: download_video(task_id) using yt-dlp Python library
+- [x] T049 [US2] Add yt-dlp progress hook in backend/tasks/download_tasks.py to update DownloadTask.progress_percent and status in database
+- [x] T050 [US2] Implement retry logic in backend/tasks/download_tasks.py: max 3 retries with exponential backoff (60s, 120s, 240s)
+- [x] T051 [US2] Add file path logic in backend/tasks/download_tasks.py: save to channel's download_path directory (downloads/{channel_id}/{video_id}.mp4)
+- [x] T052 [US2] Create DownloadHistory record in backend/tasks/download_tasks.py on completion with full video metadata (title, duration, file_path, file_size, success, error_code)
 - [x] T053 [US2] Create backend/routers/downloads.py with POST /api/downloads endpoint (accepts video_id + channel_id, checks duplicates, enqueues task, returns 202 with task_id)
-- [X] T054 [US2] Add POST /api/downloads/batch endpoint to backend/routers/downloads.py (accepts array of video_ids with channel_ids, enqueues multiple tasks) (SKIPPED - batch-urls is more user-friendly)
+- [x] T054 [US2] Add POST /api/downloads/batch endpoint to backend/routers/downloads.py (accepts array of video_ids with channel_ids, enqueues multiple tasks) (SKIPPED - batch-urls is more user-friendly)
 - [x] T055 [US2] Add POST /api/downloads/batch-urls endpoint to backend/routers/downloads.py (accepts video_urls array, extracts video_id, fetches metadata, auto-creates channels, checks duplicates, enqueues tasks)
 - [x] T056 [US2] Register downloads router in backend/main.py with prefix /api/downloads
 - [x] T057 [US2] Add error handling for ALREADY_DOWNLOADED, DOWNLOAD_IN_PROGRESS, VIDEO_UNAVAILABLE, METADATA_FETCH_FAILED, RATE_LIMIT_EXCEEDED in backend/services/download_service.py
@@ -145,26 +145,26 @@
 
 ### Backend for User Story 3
 
-- [X] T068 [P] [US3] Add get_active_tasks() function to backend/repository/download_repo.py (filters status IN ['pending', 'downloading'])
-- [X] T069 [P] [US3] Add get_task_with_channel_info() function to backend/repository/download_repo.py (JOIN with Channel to get channel name)
-- [X] T070 [US3] Create backend/routers/queue.py with GET /api/queue/status endpoint (returns summary + list of active tasks with video info)
-- [X] T071 [US3] Add GET /api/queue/tasks/{task_id} endpoint to backend/routers/queue.py (returns detailed task status)
-- [X] T072 [US3] Add POST /api/queue/tasks/{task_id}/retry endpoint to backend/routers/queue.py (re-enqueues failed task if retry_count < 3)
-- [X] T073 [US3] Register queue router in backend/main.py with prefix /api/queue
-- [X] T074 [US3] Add error handling in backend/routers/queue.py for CANNOT_RETRY (task not failed) and MAX_RETRIES_EXCEEDED
+- [x] T068 [P] [US3] Add get_active_tasks() function to backend/repository/download_repo.py (filters status IN ['pending', 'downloading'])
+- [x] T069 [P] [US3] Add get_task_with_channel_info() function to backend/repository/download_repo.py (JOIN with Channel to get channel name)
+- [x] T070 [US3] Create backend/routers/queue.py with GET /api/queue/status endpoint (returns summary + list of active tasks with video info)
+- [x] T071 [US3] Add GET /api/queue/tasks/{task_id} endpoint to backend/routers/queue.py (returns detailed task status)
+- [x] T072 [US3] Add POST /api/queue/tasks/{task_id}/retry endpoint to backend/routers/queue.py (re-enqueues failed task if retry_count < 3)
+- [x] T073 [US3] Register queue router in backend/main.py with prefix /api/queue
+- [x] T074 [US3] Add error handling in backend/routers/queue.py for CANNOT_RETRY (task not failed) and MAX_RETRIES_EXCEEDED
 
 ### Frontend for User Story 3
 
-- [X] T075 [P] [US3] Create web/src/services/queueApi.ts with functions: fetchQueueStatus(), fetchTaskStatus(task_id), retryTask(task_id)
-- [X] T076 [P] [US3] Create web/src/components/QueueItem.tsx to display task info (video title, status badge, progress bar, error message, retry button if failed)
-- [X] T077 [US3] Create web/src/pages/Queue.tsx with queue summary stats (pending, downloading, completed_today, failed_today) and task list
-- [X] T078 [US3] Add Queue route in web/src/App.tsx using <Route path="/queue" element={<Queue />} />
-- [X] T079 [US3] Implement polling in web/src/pages/Queue.tsx: useEffect with setInterval every 2500ms to fetch queue status
-- [X] T080 [US3] Show progress bar in web/src/components/QueueItem.tsx for tasks with status=downloading (0-100%)
-- [X] T081 [US3] Add retry button in web/src/components/QueueItem.tsx for failed tasks (calls retryTask API)
-- [X] T082 [US3] Show "last updated" timestamp in web/src/pages/Queue.tsx to indicate freshness of data
-- [X] T083 [US3] Add color-coded status badges in web/src/components/QueueItem.tsx: pending=yellow, downloading=blue, completed=green, failed=red
-- [X] T084 [US3] Stop polling when user leaves Queue page (cleanup in useEffect return function)
+- [x] T075 [P] [US3] Create web/src/services/queueApi.ts with functions: fetchQueueStatus(), fetchTaskStatus(task_id), retryTask(task_id)
+- [x] T076 [P] [US3] Create web/src/components/QueueItem.tsx to display task info (video title, status badge, progress bar, error message, retry button if failed)
+- [x] T077 [US3] Create web/src/pages/Queue.tsx with queue summary stats (pending, downloading, completed_today, failed_today) and task list
+- [x] T078 [US3] Add Queue route in web/src/App.tsx using <Route path="/queue" element={<Queue />} />
+- [x] T079 [US3] Implement polling in web/src/pages/Queue.tsx: useEffect with setInterval every 2500ms to fetch queue status
+- [x] T080 [US3] Show progress bar in web/src/components/QueueItem.tsx for tasks with status=downloading (0-100%)
+- [x] T081 [US3] Add retry button in web/src/components/QueueItem.tsx for failed tasks (calls retryTask API)
+- [x] T082 [US3] Show "last updated" timestamp in web/src/pages/Queue.tsx to indicate freshness of data
+- [x] T083 [US3] Add color-coded status badges in web/src/components/QueueItem.tsx: pending=yellow, downloading=blue, completed=green, failed=red
+- [x] T084 [US3] Stop polling when user leaves Queue page (cleanup in useEffect return function)
 
 **Checkpoint**: User Story 3 complete - queue visibility, real-time updates via polling, retry capability
 
@@ -178,27 +178,27 @@
 
 ### Backend for User Story 4
 
-- [X] T085 [P] [US4] Update backend/repository/history_repo.py with get_history(search, date_from, date_to, success, limit, offset) function with JOIN to Channel (video info already in DownloadHistory)
-- [X] T086 [P] [US4] Add get_history_stats(period) function to backend/repository/history_repo.py for analytics (total, success rate, total size, avg time, most downloaded channel)
-- [X] T087 [US4] Create backend/routers/history.py with GET /api/history endpoint supporting query params: search, date_from, date_to, success, limit, offset
-- [X] T088 [US4] Add GET /api/history/stats endpoint to backend/routers/history.py with period query param (7d, 30d, 90d, all)
-- [X] T089 [US4] Register history router in backend/main.py with prefix /api/history
-- [X] T090 [US4] Add pagination metadata to GET /api/history response: total, limit, offset, filters_applied
+- [x] T085 [P] [US4] Update backend/repository/history_repo.py with get_history(search, date_from, date_to, success, limit, offset) function with JOIN to Channel (video info already in DownloadHistory)
+- [x] T086 [P] [US4] Add get_history_stats(period) function to backend/repository/history_repo.py for analytics (total, success rate, total size, avg time, most downloaded channel)
+- [x] T087 [US4] Create backend/routers/history.py with GET /api/history endpoint supporting query params: search, date_from, date_to, success, limit, offset
+- [x] T088 [US4] Add GET /api/history/stats endpoint to backend/routers/history.py with period query param (7d, 30d, 90d, all)
+- [x] T089 [US4] Register history router in backend/main.py with prefix /api/history
+- [x] T090 [US4] Add pagination metadata to GET /api/history response: total, limit, offset, filters_applied
 
 ### Frontend for User Story 4
 
-- [X] T091 [P] [US4] Create web/src/types/history.ts with DownloadHistory interface
-- [X] T092 [P] [US4] Create web/src/services/historyApi.ts with functions: fetchHistory(filters), fetchHistoryStats(period)
-- [X] T093 [P] [US4] Create web/src/components/HistoryItem.tsx to display history record (video title, channel, date, file size, duration, success badge)
-- [X] T094 [US4] Create web/src/pages/History.tsx with search input, date range filters, success filter checkbox, and history list
-- [X] T095 [US4] Add History route in web/src/App.tsx using <Route path="/history" element={<History />} />
-- [X] T096 [US4] Implement search functionality in web/src/pages/History.tsx: debounced input calling fetchHistory with search param
-- [X] T097 [US4] Add date range pickers in web/src/pages/History.tsx (date_from, date_to inputs) that trigger fetchHistory
-- [X] T098 [US4] Implement pagination in web/src/pages/History.tsx with "Load More" button or infinite scroll
-- [X] T099 [US4] Show history stats summary at top of web/src/pages/History.tsx: total downloads, success rate, total size
-- [X] T100 [US4] Add filtering by success/failure in web/src/pages/History.tsx with checkbox or toggle
-- [X] T101 [P] [US4] Create web/src/utils/formatters.ts with functions: formatFileSize(bytes), formatDuration(seconds), formatDate(iso_string)
-- [X] T102 [US4] Use formatters in web/src/components/HistoryItem.tsx to display human-readable file sizes and dates
+- [x] T091 [P] [US4] Create web/src/types/history.ts with DownloadHistory interface
+- [x] T092 [P] [US4] Create web/src/services/historyApi.ts with functions: fetchHistory(filters), fetchHistoryStats(period)
+- [x] T093 [P] [US4] Create web/src/components/HistoryItem.tsx to display history record (video title, channel, date, file size, duration, success badge)
+- [x] T094 [US4] Create web/src/pages/History.tsx with search input, date range filters, success filter checkbox, and history list
+- [x] T095 [US4] Add History route in web/src/App.tsx using <Route path="/history" element={<History />} />
+- [x] T096 [US4] Implement search functionality in web/src/pages/History.tsx: debounced input calling fetchHistory with search param
+- [x] T097 [US4] Add date range pickers in web/src/pages/History.tsx (date_from, date_to inputs) that trigger fetchHistory
+- [x] T098 [US4] Implement pagination in web/src/pages/History.tsx with "Load More" button or infinite scroll
+- [x] T099 [US4] Show history stats summary at top of web/src/pages/History.tsx: total downloads, success rate, total size
+- [x] T100 [US4] Add filtering by success/failure in web/src/pages/History.tsx with checkbox or toggle
+- [x] T101 [P] [US4] Create web/src/utils/formatters.ts with functions: formatFileSize(bytes), formatDuration(seconds), formatDate(iso_string)
+- [x] T102 [US4] Use formatters in web/src/components/HistoryItem.tsx to display human-readable file sizes and dates
 
 **Checkpoint**: User Story 4 complete - full history browsing, search, filters, all 4 user stories implemented
 
@@ -208,24 +208,24 @@
 
 **Purpose**: Improvements that affect multiple user stories or enhance overall quality
 
-- [X] T103 [P] Add indexes verification script in backend/models/database.py to ensure all indexes from data-model.md are created
-- [X] T104 [P] Create backend/utils/error_handlers.py with custom exception classes: DownloadException, ValidationException, NotFoundException
-- [X] T105 Add global exception handler in backend/main.py to catch all exceptions and return structured error responses with error_code, user_message, technical_details
-- [X] T106 [P] Add disk space check in backend/services/download_service.py before enqueueing download (reject if <1GB free)
-- [X] T107 [P] Add request logging middleware in backend/main.py to log all API requests with timestamp, method, path, status, duration
-- [X] T108 [P] Create web/src/index.css with global styles and CSS variables for consistent theming
-- [X] T109 [P] Add loading spinner component in web/src/components/LoadingSpinner.tsx used across all pages
-- [X] T110 [P] Add error boundary component in web/src/components/ErrorBoundary.tsx to catch React errors
-- [X] T111 Wrap App in ErrorBoundary in web/src/main.tsx
-- [X] T112 [P] Add toast notification system in web/src/components/Toast.tsx for success/error messages (NOTE: Using Shadcn Alert components throughout app for notifications)
-- [X] T113 Add README.md at repository root with project overview, setup instructions (link to quickstart.md), and architecture diagram
-- [X] T114 [P] Add .gitignore at repository root: venv/, node_modules/, dist/, data/, downloads/, \*.db, .env (ALREADY EXISTS - comprehensive .gitignore in place)
-- [X] T115 Validate all endpoints against contracts/api-spec.md: verify request/response schemas match (Validated during implementation - all match)
-- [X] T116 Validate database schema against data-model.md: verify all indexes, constraints, foreign keys exist (Added verify_indexes() function)
-- [X] T117 Run through quickstart.md manual test scenarios for all 4 user stories to verify independent testability (Manual testing recommended)
-- [X] T118 [P] Add environment variable documentation in backend/.env.example with comments explaining each variable
-- [X] T119 [P] Add TypeScript type validation: run tsc --noEmit in web/ to check for type errors (No errors found)
-- [X] T120 [P] Optimize web build in web/vite.config.ts: enable code splitting, minification, compression
+- [x] T103 [P] Add indexes verification script in backend/models/database.py to ensure all indexes from data-model.md are created
+- [x] T104 [P] Create backend/utils/error_handlers.py with custom exception classes: DownloadException, ValidationException, NotFoundException
+- [x] T105 Add global exception handler in backend/main.py to catch all exceptions and return structured error responses with error_code, user_message, technical_details
+- [x] T106 [P] Add disk space check in backend/services/download_service.py before enqueueing download (reject if <1GB free)
+- [x] T107 [P] Add request logging middleware in backend/main.py to log all API requests with timestamp, method, path, status, duration
+- [x] T108 [P] Create web/src/index.css with global styles and CSS variables for consistent theming
+- [x] T109 [P] Add loading spinner component in web/src/components/LoadingSpinner.tsx used across all pages
+- [x] T110 [P] Add error boundary component in web/src/components/ErrorBoundary.tsx to catch React errors
+- [x] T111 Wrap App in ErrorBoundary in web/src/main.tsx
+- [x] T112 [P] Add toast notification system in web/src/components/Toast.tsx for success/error messages (NOTE: Using Shadcn Alert components throughout app for notifications)
+- [x] T113 Add README.md at repository root with project overview, setup instructions (link to quickstart.md), and architecture diagram
+- [x] T114 [P] Add .gitignore at repository root: venv/, node_modules/, dist/, data/, downloads/, \*.db, .env (ALREADY EXISTS - comprehensive .gitignore in place)
+- [x] T115 Validate all endpoints against contracts/api-spec.md: verify request/response schemas match (Validated during implementation - all match)
+- [x] T116 Validate database schema against data-model.md: verify all indexes, constraints, foreign keys exist (Added verify_indexes() function)
+- [x] T117 Run through quickstart.md manual test scenarios for all 4 user stories to verify independent testability (Manual testing recommended)
+- [x] T118 [P] Add environment variable documentation in backend/.env.example with comments explaining each variable
+- [x] T119 [P] Add TypeScript type validation: run tsc --noEmit in web/ to check for type errors (No errors found)
+- [x] T120 [P] Optimize web build in web/vite.config.ts: enable code splitting, minification, compression
 
 ---
 

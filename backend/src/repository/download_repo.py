@@ -156,7 +156,6 @@ def create_history_record(
     duration: Optional[int] = None,
     file_path: Optional[str] = None,
     file_size: Optional[int] = None,
-    video_metadata: Optional[str] = None,
     error_code: Optional[str] = None,
 ) -> DownloadHistory:
     """Create a new history record."""
@@ -172,7 +171,6 @@ def create_history_record(
         duration=duration,
         file_path=file_path,
         file_size=file_size,
-        video_metadata=video_metadata,
         error_code=error_code,
     )
     db.add(history)
