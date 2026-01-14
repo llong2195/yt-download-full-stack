@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 from src.models.channel import Channel
 from src.models.download_history import DownloadHistory
@@ -224,7 +224,9 @@ def get_all_history(
 
 def get_history_with_filters(
     db: Session,
-    search: Optional[str] = None,
+    search_terms: Optional[
+        List[str]
+    ] = None,  # Updated to handle multi-line search terms
     channel_id: Optional[int] = None,
     date_from: Optional[datetime] = None,
     date_to: Optional[datetime] = None,
@@ -236,7 +238,7 @@ def get_history_with_filters(
 
     Args:
         db: Database session
-        search: Search in video_title (case-insensitive)
+        search_terms: List of search terms for video_title, video_id, or video_url
         channel_id: Filter by channel ID
         date_from: Filter by download_date >= date_from
         date_to: Filter by download_date <= date_to
@@ -253,8 +255,15 @@ def get_history_with_filters(
     )
 
     # Apply filters
-    if search:
-        query = query.filter(DownloadHistory.video_title.ilike(f"%{search}%"))
+    if search_terms:
+        print("Search terms:", search_terms)
+        search_filters = [
+            DownloadHistory.video_title.ilike(f"%{term}%")
+            | DownloadHistory.video_id.ilike(f"%{term}%")
+            | DownloadHistory.video_url.ilike(f"%{term}%")
+            for term in search_terms
+        ]
+        query = query.filter(or_(*search_filters))
 
     if channel_id:
         query = query.filter(DownloadHistory.channel_id == channel_id)

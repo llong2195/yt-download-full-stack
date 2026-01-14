@@ -25,7 +25,10 @@ router = APIRouter()
     responses={500: {"model": ErrorResponse}},
 )
 async def get_history(
-    search: Optional[str] = Query(None, description="Search in video titles"),
+    search: Optional[str] = Query(
+        None,
+        description="Search in video titles, video IDs, or URLs (multi-line for OR logic)",
+    ),
     channel_id: Optional[int] = Query(None, description="Filter by channel ID"),
     date_from: Optional[str] = Query(
         None, description="Filter by download date >= this date (ISO format)"
@@ -41,7 +44,7 @@ async def get_history(
     """Get download history with search and filters.
 
     Args:
-        search: Search in video titles (case-insensitive)
+        search: Search in video titles, video IDs, or URLs (multi-line for OR logic)
         channel_id: Filter by channel ID
         date_from: Filter by download_date >= date_from (ISO format: YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)
         date_to: Filter by download_date <= date_to (ISO format)
@@ -76,10 +79,20 @@ async def get_history(
                     detail=f"Invalid date_to format: {date_to}. Use ISO format (YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS)",
                 )
 
+        # Process multi-line search input
+        search_terms = None
+        if search:
+            search_terms = [
+                term.strip()
+                for delimiter in ("\n", "|")
+                for term in search.split(delimiter)
+                if term.strip()
+            ]
+
         # Get history with filters
         history_records, total_count = download_repo.get_history_with_filters(
             db=db,
-            search=search,
+            search_terms=search_terms,  # Updated to pass multi-line search terms
             channel_id=channel_id,
             date_from=parsed_date_from,
             date_to=parsed_date_to,
