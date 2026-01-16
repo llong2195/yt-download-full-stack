@@ -294,7 +294,7 @@ export default function History() {
               <CardTitle className="text-xl">Download History</CardTitle>
               <Badge variant="outline" className="mr-2">
                 Filtered
-              </Badge>
+              </Badge>{total} record(s) found
             </div>
           </div>
         </CardHeader>
