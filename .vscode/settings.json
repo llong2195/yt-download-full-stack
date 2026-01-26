@@ -10,4 +10,5 @@
         ".specify/scripts/bash/": true,
         ".specify/scripts/powershell/": true
     },
+    "python.analysis.autoImportCompletions": true,
 }

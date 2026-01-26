@@ -177,23 +177,7 @@ def download_video(task_id: str) -> bool:
         logger.info(f"Output filename: {final_filename}.mp4")
 
         # Build format string based on video quality setting
-        format_string = "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
-        if video_quality and video_quality != "best":
-            # Map quality settings to yt-dlp format selectors
-            if video_quality.endswith("p"):
-                # Resolution-based (e.g., "1080p")
-                height = video_quality[:-1]
-                format_string = (
-                    f"bestvideo[height<={height}][ext=mp4]+"
-                    f"bestaudio[ext=m4a]/"
-                    f"best[height<={height}][ext=mp4]/"
-                    f"best[height<={height}]"
-                )
-            elif video_quality == "worst":
-                format_string = (
-                    "worstvideo[ext=mp4]+worstaudio[ext=m4a]/worst[ext=mp4]/worst"
-                )
-
+        format_string = build_format_string(video_quality)
         cookies_path = settings.yt_dlp_cookies_path
         if cookies_path and not cookies_path.exists():
             raise YouTubeMetadataError(
@@ -214,20 +198,30 @@ def download_video(task_id: str) -> bool:
             "writeautomaticsub": False,
             "subtitleslangs": [subtitle_language] if subtitle_language else [],
             "ffmpeg_location": _get_ffmpeg_location(),
-            "postprocessors": [
-                {
-                    "key": "FFmpegVideoConvertor",
-                    "preferedformat": "mp4",
-                }
-            ],
+            # 🔥 RẤT QUAN TRỌNG
+            "hls_prefer_native": False,
+            "merge_output_format": "mp4",
             "retries": 3,
             "fragment_retries": 3,
             "skip_unavailable_fragments": True,
+            
+            # 🚑 FIX 403
+            "player_client": ["android"],
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["android"],
+                }
+            },
+
+            # headers giống app thật
+            "http_headers": {
+                "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11)",
+            },
         }
 
         if cookies_path:
             logger.info(f"Using cookies file for yt-dlp: {cookies_path}")
-            ydl_opts["cookiefile"] = str(cookies_path)
+            # ydl_opts["cookiefile"] = str(cookies_path)
 
         if subtitle_language:
             logger.info(f"Requesting subtitles in language: {subtitle_language}")
@@ -415,6 +409,32 @@ def download_video(task_id: str) -> bool:
     finally:
         db.close()
 
+def build_format_string(video_quality: str | None) -> str:
+    """
+    Universal yt-dlp format selector
+    - Avoids HLS/m3u8
+    - Works with SABR, DASH, restricted videos
+    - Safe for backend usage
+    """
+    if video_quality and video_quality.endswith("p"):
+        height = video_quality[:-1]
+        return (
+            f"bestvideo[protocol=https][vcodec!=none][height<={height}]+"
+            f"bestaudio[protocol=https][acodec!=none]/"
+            f"best[height<={height}]/best"
+        )
+
+    if video_quality == "worst":
+        return (
+            "worstvideo[protocol=https][vcodec!=none]+"
+            "worstaudio[protocol=https][acodec!=none]/worst"
+        )
+
+    # default (best)
+    return (
+        "bestvideo[protocol=https][vcodec!=none]+"
+        "bestaudio[protocol=https][acodec!=none]/best"
+    )
 
 def _get_ffmpeg_location() -> Optional[str]:
     """
