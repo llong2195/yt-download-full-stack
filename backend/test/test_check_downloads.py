@@ -2,10 +2,6 @@
 
 import sys
 from pathlib import Path
-
-# Add backend directory to Python path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from datetime import datetime
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -13,6 +9,9 @@ from src.models import Base
 from src.models.channel import Channel
 from src.models.download_history import DownloadHistory
 from src.repository import download_repo
+
+# Add backend directory to Python path
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 
 def test_check_downloads():

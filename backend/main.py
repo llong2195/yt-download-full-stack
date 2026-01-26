@@ -18,7 +18,6 @@ from fastapi.responses import JSONResponse
 from src.models import Base, engine
 from src.routers import channels, downloads, history, queue
 from src.routers import settings as settings_router
-from src.tasks.huey_instance import huey
 from src.utils import ffmpeg_installer
 from src.utils.config import settings
 from src.utils.error_handlers import (

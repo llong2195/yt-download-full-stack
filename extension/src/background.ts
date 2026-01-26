@@ -1,4 +1,5 @@
 // Background Service Worker
+/// <reference types="chrome"/>
 import type { CheckDownloadsResponse } from "./types";
 
 const API_URL = "http://127.0.0.1:8000";
@@ -12,7 +13,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "checkDownloads") {
     checkDownloadedVideos(message.videoUrls)
       .then(sendResponse)
-      .catch(error => {
+      .catch((error) => {
         console.error("[YTB Background] Error checking downloads:", error);
         sendResponse({ error: error.message });
       });
@@ -23,9 +24,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 /**
  * Check if videos are downloaded by calling the backend API
  */
-async function checkDownloadedVideos(videoUrls: string[]): Promise<Map<string, boolean>> {
+async function checkDownloadedVideos(
+  videoUrls: string[],
+): Promise<Map<string, boolean>> {
   if (videoUrls.length === 0) return new Map();
-  
+
   try {
     const response = await fetch(`${API_URL}/api/downloads/check_downloads`, {
       method: "POST",
@@ -42,15 +45,17 @@ async function checkDownloadedVideos(videoUrls: string[]): Promise<Map<string, b
 
     const data: CheckDownloadsResponse = await response.json();
     const downloadedMap = new Map<string, boolean>();
-    
+
     data.results.forEach((result) => {
       if (result.video_id) {
         downloadedMap.set(result.video_id, result.is_downloaded);
       }
     });
 
-    console.log(`[YTB Background] Downloaded check: ${data.total_downloaded}/${data.total_checked} videos`);
-    
+    console.log(
+      `[YTB Background] Downloaded check: ${data.total_downloaded}/${data.total_checked} videos`,
+    );
+
     // Convert Map to plain object for message passing
     return Object.fromEntries(downloadedMap) as any;
   } catch (error) {

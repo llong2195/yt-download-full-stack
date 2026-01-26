@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!chrome.runtime.lastError && response) {
             updateUI(response.count, response.items);
           }
-        }
+        },
       );
     }
   });
@@ -112,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
           } else if (!response.data || response.data.length === 0) {
             showTempMessage("No selection!");
           }
-        }
+        },
       );
     });
   };
@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
         () => {
           countDisplay.textContent = "0";
           showTempMessage("Cleared");
-        }
+        },
       );
     });
   });

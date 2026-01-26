@@ -1,12 +1,10 @@
 // YouTube Link Extractor - Content Script (Clean & Fixed)
 import type {
-  VideoData,
-  Message,
   ExportResponse,
-  SelectionResponse,
   ExtendedHTMLElement,
-  CheckDownloadsResponse,
-  API_BASE_URL,
+  Message,
+  SelectionResponse,
+  VideoData,
 } from "./types";
 
 let isEnabled: boolean = false;
@@ -21,9 +19,11 @@ let downloadedVideosCache = new Map<string, boolean>();
 /**
  * Check if videos are downloaded by calling the backend API via background worker
  */
-async function checkDownloadedVideos(videoUrls: string[]): Promise<Map<string, boolean>> {
+async function checkDownloadedVideos(
+  videoUrls: string[],
+): Promise<Map<string, boolean>> {
   if (videoUrls.length === 0) return new Map();
-  
+
   try {
     // Send request to background worker to avoid CORS/PNA issues
     const response = await chrome.runtime.sendMessage({
@@ -38,7 +38,9 @@ async function checkDownloadedVideos(videoUrls: string[]): Promise<Map<string, b
 
     // Convert plain object back to Map
     const downloadedMap = new Map<string, boolean>(Object.entries(response));
-    console.log(`[YTB] Downloaded check completed: ${downloadedMap.size} results`);
+    console.log(
+      `[YTB] Downloaded check completed: ${downloadedMap.size} results`,
+    );
     return downloadedMap;
   } catch (error) {
     console.error("[YTB] Error checking downloads:", error);
@@ -51,7 +53,9 @@ async function checkDownloadedVideos(videoUrls: string[]): Promise<Map<string, b
  */
 async function updateDownloadBadges(): Promise<void> {
   // Collect all visible video URLs
-  const videoItems = document.querySelectorAll<ExtendedHTMLElement>("[data-ytb-video-id]");
+  const videoItems = document.querySelectorAll<ExtendedHTMLElement>(
+    "[data-ytb-video-id]",
+  );
   const videoUrls: string[] = [];
   const videoElements = new Map<string, HTMLElement>();
 
@@ -68,11 +72,11 @@ async function updateDownloadBadges(): Promise<void> {
 
   // Check download status
   const downloadedMap = await checkDownloadedVideos(videoUrls);
-  
+
   // Update cache and badges
   downloadedMap.forEach((isDownloaded, videoId) => {
     downloadedVideosCache.set(videoId, isDownloaded);
-    
+
     const element = videoElements.get(videoId);
     if (element && isDownloaded) {
       addDownloadedBadge(element);
@@ -88,7 +92,9 @@ function addDownloadedBadge(parentItem: HTMLElement): void {
   if (parentItem.querySelector(".ytb-downloaded-badge")) return;
 
   // Find the thumbnail container
-  const thumbnail = parentItem.querySelector("ytd-thumbnail, ytm-shorts-lockup-view-model");
+  const thumbnail = parentItem.querySelector(
+    "ytd-thumbnail, ytm-shorts-lockup-view-model",
+  );
   if (!thumbnail) return;
 
   // Create badge
@@ -137,7 +143,7 @@ function enableExtractor(): void {
       processingTimeout = setTimeout(() => {
         processPage();
         processingTimeout = null;
-        
+
         // Check downloads after mutations
         updateDownloadBadges();
       }, 500);
@@ -153,7 +159,7 @@ function enableExtractor(): void {
 
   // Initial Scan
   processPage();
-  
+
   // Check downloads after initial page load
   setTimeout(() => {
     updateDownloadBadges();
@@ -201,7 +207,7 @@ function processPage(): void {
   ];
 
   const items = document.querySelectorAll<ExtendedHTMLElement>(
-    itemSelectors.join(",")
+    itemSelectors.join(","),
   );
   let newItemsCount = 0;
 
@@ -212,7 +218,7 @@ function processPage(): void {
 
     // 1. Try Standard Video (ytd-thumbnail)
     const stdThumbnail = item.querySelector(
-      "ytd-thumbnail, ytd-playlist-thumbnail"
+      "ytd-thumbnail, ytd-playlist-thumbnail",
     );
     if (stdThumbnail) {
       const anchor =
@@ -228,7 +234,7 @@ function processPage(): void {
           if (detailsArea) {
             // Try to find or create a checkbox container in details
             let checkboxContainer = detailsArea.querySelector<HTMLElement>(
-              ".ytb-checkbox-container"
+              ".ytb-checkbox-container",
             );
             if (!checkboxContainer) {
               checkboxContainer = document.createElement("div");
@@ -242,7 +248,7 @@ function processPage(): void {
           } else {
             // Fallback to thumbnail overlays if details not found
             injectionTarget = (stdThumbnail.querySelector<HTMLElement>(
-              "#overlays"
+              "#overlays",
             ) || stdThumbnail) as HTMLElement;
           }
         }
@@ -255,13 +261,13 @@ function processPage(): void {
       if (shortsModel) {
         isShorts = true;
         const shortsAnchor = shortsModel.querySelector<HTMLAnchorElement>(
-          'a[href^="/shorts/"]'
+          'a[href^="/shorts/"]',
         );
         if (shortsAnchor && shortsAnchor.href) {
           videoId = extractVideoId(shortsAnchor.href);
           // For Shorts: keep thumbnail injection
           injectionTarget = shortsModel.querySelector<HTMLElement>(
-            ".shortsLockupViewModelHostThumbnailContainer"
+            ".shortsLockupViewModelHostThumbnailContainer",
           );
           if (!injectionTarget) injectionTarget = shortsModel as HTMLElement;
         }
@@ -277,7 +283,7 @@ function processPage(): void {
     if (previousId && previousId !== videoId) {
       // Video ID changed - element was recycled
       const oldCheckbox = injectionTarget.querySelector(
-        ".yt-extractor-checkbox"
+        ".yt-extractor-checkbox",
       );
       if (oldCheckbox) oldCheckbox.remove();
       delete item.dataset.ytbProcessed;
@@ -308,7 +314,7 @@ function processPage(): void {
 
         // Find the checkbox in this item
         const checkbox = item.querySelector<HTMLElement>(
-          ".yt-extractor-checkbox"
+          ".yt-extractor-checkbox",
         );
         if (checkbox) {
           // Toggle selection by programmatically triggering checkbox logic
@@ -321,7 +327,7 @@ function processPage(): void {
               `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
        <polyline points="20 6 9 17 4 12"></polyline>
-    </svg>`
+    </svg>`,
             );
           }
         }
@@ -362,7 +368,7 @@ function injectCheckbox(
   container: HTMLElement,
   videoId: string,
   parentItem: HTMLElement,
-  isShorts: boolean = false
+  isShorts: boolean = false,
 ): void {
   // Sanity check
   if (container.querySelector(".yt-extractor-checkbox")) return;
@@ -399,7 +405,7 @@ function toggleSelection(
   videoId: string,
   parentItem: HTMLElement,
   checkbox: HTMLElement,
-  svgResult: string
+  svgResult: string,
 ): void {
   if (selectedVideos.has(videoId)) {
     selectedVideos.delete(videoId);
@@ -447,7 +453,7 @@ function extractMetadata(id: string, parentItem: HTMLElement): VideoData {
   if (title === "Unknown Video" || !title) {
     // Try the Shorts specific title selector
     const shortTitleEl = parentItem.querySelector<HTMLElement>(
-      '.shortsLockupViewModelHostMetadataTitle span[role="text"]'
+      '.shortsLockupViewModelHostMetadataTitle span[role="text"]',
     );
     if (shortTitleEl) {
       title = shortTitleEl.textContent?.trim() || title;
@@ -498,7 +504,7 @@ chrome.runtime.onMessage.addListener(
 
         // Find and update checkbox in DOM
         const checkbox = document.querySelector<HTMLElement>(
-          `.yt-extractor-checkbox[data-vid="${videoId}"]`
+          `.yt-extractor-checkbox[data-vid="${videoId}"]`,
         );
         if (checkbox) {
           checkbox.classList.remove("selected");
@@ -550,7 +556,7 @@ chrome.runtime.onMessage.addListener(
 
       sendResponse({ success: true, data: exportContent } as ExportResponse);
     }
-  }
+  },
 );
 
 // Init
