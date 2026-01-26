@@ -352,3 +352,45 @@ def get_history_stats(db: Session, period: str = "all") -> dict:
         "total_duration_seconds": int(total_duration),
         "average_download_time_seconds": round(float(avg_time), 2),
     }
+
+
+def check_videos_downloaded_by_ids(
+    db: Session, video_ids: List[str]
+) -> dict[str, Optional[DownloadHistory]]:
+    """Check if multiple videos have been successfully downloaded.
+
+    Args:
+        db: Database session
+        video_ids: List of YouTube video IDs
+
+    Returns:
+        Dictionary mapping video_id to DownloadHistory record (or None if not downloaded)
+    """
+    if not video_ids:
+        return {}
+
+    # Query for all successful downloads for the given video IDs
+    records = (
+        db.query(DownloadHistory)
+        .filter(
+            and_(
+                DownloadHistory.video_id.in_(video_ids),
+                DownloadHistory.success == True,
+            )
+        )
+        .all()
+    )
+
+    # Create a mapping of video_id to most recent download record
+    result = {}
+    for video_id in video_ids:
+        # Find the most recent download for this video_id
+        matching_records = [r for r in records if r.video_id == video_id]
+        if matching_records:
+            # Sort by download_date and get the most recent
+            most_recent = max(matching_records, key=lambda x: x.download_date)
+            result[video_id] = most_recent
+        else:
+            result[video_id] = None
+
+    return result

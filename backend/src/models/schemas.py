@@ -208,6 +208,37 @@ class TaskRetryResponse(BaseModel):
 
 
 # ============================================================================
+# Check Downloads Schemas
+# ============================================================================
+
+
+class CheckDownloadsRequest(BaseModel):
+    """Request model for checking if videos are downloaded."""
+
+    urls: list[str] = Field(..., description="List of YouTube video URLs to check")
+
+
+class VideoDownloadStatus(BaseModel):
+    """Status of a single video download."""
+
+    url: str
+    video_id: Optional[str] = None
+    is_downloaded: bool
+    download_date: Optional[datetime] = None
+    file_path: Optional[str] = None
+    video_title: Optional[str] = None
+    error: Optional[str] = None
+
+
+class CheckDownloadsResponse(BaseModel):
+    """Response model for check downloads."""
+
+    results: list[VideoDownloadStatus]
+    total_checked: int
+    total_downloaded: int
+
+
+# ============================================================================
 # History Schemas
 # ============================================================================
 

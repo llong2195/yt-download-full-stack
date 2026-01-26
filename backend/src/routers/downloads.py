@@ -10,12 +10,16 @@ from src.models.database import get_db
 from src.models.schemas import (
     BatchDownloadResponse,
     BatchUrlDownloadRequest,
+    CheckDownloadsRequest,
+    CheckDownloadsResponse,
     DownloadRequest,
     DownloadTaskResponse,
+    VideoDownloadStatus,
 )
 from src.repository import download_repo
 from src.services import download_service
 from src.utils.logger import get_logger
+from src.utils.validators import extract_video_id
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -149,4 +153,104 @@ async def request_single_download(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to request download: {str(e)}",
+        )
+
+
+@router.post("/check_downloads", response_model=CheckDownloadsResponse)
+async def check_downloads(
+    request: CheckDownloadsRequest,
+    db: Session = Depends(get_db),
+):
+    """Check if videos have been downloaded.
+
+    This endpoint:
+    - Accepts a list of YouTube video URLs
+    - Extracts video IDs from each URL
+    - Checks the download history database for successful downloads
+    - Returns status for each video (downloaded or not)
+    """
+    try:
+        if not request.urls or len(request.urls) == 0:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="urls list cannot be empty",
+            )
+
+        # Extract video IDs from URLs
+        url_to_video_id = {}
+        video_ids = []
+        results = []
+
+        for url in request.urls:
+            video_id = extract_video_id(url)
+            if video_id:
+                url_to_video_id[url] = video_id
+                video_ids.append(video_id)
+            else:
+                # Invalid URL - add error result
+                results.append(
+                    VideoDownloadStatus(
+                        url=url,
+                        video_id=None,
+                        is_downloaded=False,
+                        download_date=None,
+                        file_path=None,
+                        video_title=None,
+                        error="Invalid YouTube URL",
+                    )
+                )
+
+        # Check database for downloaded videos
+        if video_ids:
+            download_records = await asyncio.to_thread(
+                download_repo.check_videos_downloaded_by_ids,
+                db,
+                video_ids,
+            )
+
+            # Build results for valid URLs
+            for url, video_id in url_to_video_id.items():
+                record = download_records.get(video_id)
+                if record:
+                    results.append(
+                        VideoDownloadStatus(
+                            url=url,
+                            video_id=video_id,
+                            is_downloaded=True,
+                            download_date=record.download_date,
+                            file_path=record.file_path,
+                            video_title=record.video_title,
+                            error=None,
+                        )
+                    )
+                else:
+                    results.append(
+                        VideoDownloadStatus(
+                            url=url,
+                            video_id=video_id,
+                            is_downloaded=False,
+                            download_date=None,
+                            file_path=None,
+                            video_title=None,
+                            error=None,
+                        )
+                    )
+
+        # Count downloaded videos
+        total_downloaded = sum(1 for r in results if r.is_downloaded)
+
+        return CheckDownloadsResponse(
+            results=results,
+            total_checked=len(request.urls),
+            total_downloaded=total_downloaded,
+        )
+
+    except HTTPException:
+        raise
+
+    except Exception as e:
+        logger.exception(f"Failed to check downloads: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to check downloads: {str(e)}",
         )
