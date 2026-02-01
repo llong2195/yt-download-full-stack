@@ -185,8 +185,8 @@ def download_video(task_id: str) -> bool:
                 "Set YT_DLP_COOKIES_FILE to a valid cookies.txt file."
             )
 
-        # Configure yt-dlp options
-        ydl_opts: yt_dlp._Params = {
+        # Base yt-dlp options
+        base_opts = {
             "format": format_string,
             "outtmpl": output_template,
             "progress_hooks": [DownloadProgress(task_id, db)],
@@ -198,115 +198,178 @@ def download_video(task_id: str) -> bool:
             "writeautomaticsub": False,
             "subtitleslangs": [subtitle_language] if subtitle_language else [],
             "ffmpeg_location": _get_ffmpeg_location(),
-            # 🔥 RẤT QUAN TRỌNG
             "hls_prefer_native": False,
             "merge_output_format": "mp4",
-            "retries": 3,
-            "fragment_retries": 3,
+            "retries": 10,
+            "fragment_retries": 10,
             "skip_unavailable_fragments": True,
-            
-            # 🚑 FIX 403
-            "player_client": ["android"],
+        }
+
+        # Define fallback profiles
+        ANDROID_PROFILE = {
             "extractor_args": {
                 "youtube": {
                     "player_client": ["android"],
                 }
             },
-
-            # headers giống app thật
             "http_headers": {
-                "User-Agent": "com.google.android.youtube/19.09.37 (Linux; U; Android 11)",
+                "User-Agent": "com.google.android.youtube/19.09.37 (Linux; Android 11)",
             },
         }
 
-        if cookies_path:
+        IOS_PROFILE = {
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["ios"],
+                }
+            },
+            "http_headers": {
+                "User-Agent": (
+                    "com.google.ios.youtube/19.09.4 "
+                    "(iPhone14,3; U; CPU iOS 17_0 like Mac OS X)"
+                ),
+            },
+        }
+
+        WEB_PROFILE = {
+            "extractor_args": {
+                "youtube": {
+                    "player_client": ["web"],
+                }
+            },
+            "http_headers": {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                ),
+            },
+        }
+
+        # Build fallback strategies
+        strategies = [
+            ("ANDROID", ANDROID_PROFILE),
+            ("IOS", IOS_PROFILE),
+        ]
+
+        # Add WEB+COOKIES if cookies available
+        if cookies_path and cookies_path.exists():
             logger.info(f"Using cookies file for yt-dlp: {cookies_path}")
-            # ydl_opts["cookiefile"] = str(cookies_path)
+            strategies.append(("WEB+COOKIES", {
+                **WEB_PROFILE,
+                "cookiefile": str(cookies_path),
+            }))
+
+        # Final fallback - best format without restrictions
+        strategies.append(("BEST_FALLBACK", {"format": "best"}))
 
         if subtitle_language:
             logger.info(f"Requesting subtitles in language: {subtitle_language}")
 
-        # Download video
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        # Try download with fallback strategies
+        info = None
+        last_error = None
+
+        for strategy_name, profile in strategies:
             try:
-                info = ydl.extract_info(task.video_url, download=True)
-
-                # Log if subtitles were available
-                if subtitle_language:
-                    available_subs = info.get("subtitles", {})
-                    if subtitle_language not in available_subs:
-                        logger.warning(
-                            f"Requested subtitles ({subtitle_language}) not available "
-                            f"for video {task.video_id}"
-                        )
-            except Exception as e:
-                # Check if it's a quality/format error
-                if "requested format not available" in str(e).lower():
-                    logger.warning(
-                        f"Requested quality ({video_quality}) not available, "
-                        f"falling back to best available"
-                    )
-                    # Retry with best quality
-                    ydl_opts["format"] = "best"
+                logger.info(f"Attempting download with strategy: {strategy_name}")
+                
+                ydl_opts = {**base_opts, **profile}
+                
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(task.video_url, download=True)
-                else:
-                    raise
+                    
+                    # Log if subtitles were available
+                    if subtitle_language and info:
+                        available_subs = info.get("subtitles", {})
+                        if subtitle_language not in available_subs:
+                            logger.warning(
+                                f"Requested subtitles ({subtitle_language}) not available "
+                                f"for video {task.video_id}"
+                            )
+                    
+                    logger.info(f"✅ Download successful with {strategy_name}")
+                    break  # Success - exit loop
 
-            # Get actual downloaded file path
-            downloaded_file = ydl.prepare_filename(info)
-            if not os.path.exists(downloaded_file):
-                # Try with the numbered filename we created
-                downloaded_file = str(download_path / f"{final_filename}.mp4")
+            except Exception as e:
+                last_error = e
+                error_msg = str(e)
+                logger.warning(f"❌ {strategy_name} failed: {error_msg[:200]}")
+                
+                # Check if it's a quality/format error - try simpler format
+                if "requested format not available" in error_msg.lower():
+                    logger.info(f"Retrying {strategy_name} with simplified format")
+                    try:
+                        ydl_opts["format"] = "best"
+                        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                            info = ydl.extract_info(task.video_url, download=True)
+                            logger.info(f"✅ Download successful with {strategy_name} (simplified format)")
+                            break
+                    except Exception:
+                        pass  # Continue to next strategy
+                
+                # Continue to next strategy
+                continue
 
-            file_size = (
-                os.path.getsize(downloaded_file)
-                if os.path.exists(downloaded_file)
-                else 0
-            )
+        # If all strategies failed
+        if info is None:
+            raise RuntimeError(f"All download strategies failed. Last error: {last_error}")
 
-            # Calculate download duration
-            end_time = datetime.now()
-            download_duration = int((end_time - start_time).total_seconds())
+        # Get actual downloaded file path
+        downloaded_file = ydl.prepare_filename(info)
+        if not os.path.exists(downloaded_file):
+            # Try with the numbered filename we created
+            downloaded_file = str(download_path / f"{final_filename}.mp4")
 
-            # Update task status to completed (completed_at is set automatically)
-            download_repo.update_task_status(
-                db,
-                task.task_id,
-                status="completed",
-                progress_percent=100,
-            )
-            db.commit()
+        file_size = (
+            os.path.getsize(downloaded_file)
+            if os.path.exists(downloaded_file)
+            else 0
+        )
 
-            # Create history record
-            upload_date = None
-            if info.get("upload_date"):
-                try:
-                    # Convert to datetime object (not string!)
-                    # SQLite DateTime column requires Python datetime/date object
-                    upload_date = datetime.strptime(
-                        info.get("upload_date", None), "%Y%m%d"
-                    )
-                except (ValueError, TypeError):
-                    pass
+        # Calculate download duration
+        end_time = datetime.now()
+        download_duration = int((end_time - start_time).total_seconds())
 
-            download_repo.create_history_record(
-                db,
-                channel_id=task.channel_id,
-                video_id=task.video_id,
-                video_title=info.get("title", "Unknown") or "Unknown",
-                video_url=task.video_url,
-                task_id=task.task_id,
-                upload_date=upload_date,
-                duration=info.get("duration"),
-                file_path=downloaded_file,
-                file_size=file_size,
-                download_duration_seconds=download_duration,
-                success=True,
-            )
-            db.commit()
+        # Update task status to completed (completed_at is set automatically)
+        download_repo.update_task_status(
+            db,
+            task.task_id,
+            status="completed",
+            progress_percent=100,
+        )
+        db.commit()
 
-            logger.info(f"Download completed for task {task_id}: {downloaded_file}")
-            return True
+        # Create history record
+        upload_date = None
+        if info.get("upload_date"):
+            try:
+                # Convert to datetime object (not string!)
+                # SQLite DateTime column requires Python datetime/date object
+                upload_date = datetime.strptime(
+                    info.get("upload_date", None), "%Y%m%d"
+                )
+            except (ValueError, TypeError):
+                pass
+
+        download_repo.create_history_record(
+            db,
+            channel_id=task.channel_id,
+            video_id=task.video_id,
+            video_title=info.get("title", "Unknown") or "Unknown",
+            video_url=task.video_url,
+            task_id=task.task_id,
+            upload_date=upload_date,
+            duration=info.get("duration"),
+            file_path=downloaded_file,
+            file_size=file_size,
+            download_duration_seconds=download_duration,
+            success=True,
+        )
+        db.commit()
+
+        logger.info(f"Download completed for task {task_id}: {downloaded_file}")
+        return True
 
     except yt_dlp.utils.DownloadError as e:
         error_msg = str(e)
